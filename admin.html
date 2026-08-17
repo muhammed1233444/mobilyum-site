@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mobilyum · Ürün Yönetimi</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="shell">
+  <header><div><small>MOBİLYUM</small><h1>Ürün Yönetimi</h1></div><a href="/" target="_blank">Siteyi aç ↗</a></header>
+
+  <section id="login" class="card">
+    <h2>Yönetim paneli</h2>
+    <p>Bu alan sadece mağaza yönetimi içindir.</p>
+    <div class="row"><input id="password" type="password" placeholder="Yönetici şifresi"><button id="loginBtn">Giriş yap</button></div>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <main id="panel" hidden>
+    <section class="card">
+      <div class="card-head"><div><h2>Yeni ürün ekle</h2><p>Fotoğrafı seç, bilgileri doldur ve kaydet.</p></div><button id="logoutBtn" class="ghost">Çıkış</button></div>
+      <form id="productForm">
+        <div class="grid">
+          <label>Ürün adı*<input name="name" required placeholder="Örn. Verona Koltuk Takımı"></label>
+          <label>Kategori*
+            <select name="category" required>
+              <option value="Yatak Odaları">Yatak Odaları</option>
+              <option value="Oturma Grupları">Oturma Grupları</option>
+              <option value="Yemek Odaları">Yemek Odaları</option>
+              <option value="Genç Odaları">Genç Odaları</option>
+              <option value="Diğer">Diğer</option>
+            </select>
+          </label>
+          <label>Ürün türü<input name="type" placeholder="Örn. Koltuk Takımı"></label>
+          <label>Fiyat<input name="price" placeholder="Fiyat için bilgi alın"></label>
+          <label>Eski fiyat<input name="oldPrice" placeholder="İsteğe bağlı"></label>
+          <label>Etiket<input name="tag" placeholder="Yeni / Premium / Öne Çıkan"></label>
+          <label class="full">Açıklama<textarea name="description" placeholder="Kısa ürün açıklaması"></textarea></label>
+          <label class="full">Ürün fotoğrafı*<input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" required></label>
+        </div>
+        <button class="save" type="submit">Ürünü kaydet</button>
+        <div id="formMsg" class="msg"></div>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><div><h2>Eklediğin ürünler</h2><p>Buradan ürünleri silebilirsin.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
+      <div id="products" class="products"></div>
+    </section>
+  </main>
+</div>
+<script src="admin.js"></script>
+</body>
+</html>
