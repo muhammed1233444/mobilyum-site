@@ -28,6 +28,9 @@ $("#productForm").onsubmit=async e=>{
   const msg=$("#formMsg"); msg.textContent="Kaydediliyor...";
   try{
     const fd=new FormData(e.target);
+    const files=e.target.querySelector('input[name="images"]').files;
+    if(!files.length) throw new Error("En az 1 fotoğraf seç.");
+    if(files.length>12) throw new Error("Bir ürüne en fazla 12 fotoğraf ekleyebilirsin.");
     await api("/api/products",{method:"POST",body:fd});
     e.target.reset(); msg.textContent="Ürün başarıyla eklendi."; load();
   }catch(err){msg.textContent=err.message}
@@ -37,8 +40,8 @@ async function load(){
   const box=$("#products");
   if(!items.length){box.innerHTML="<p>Henüz yönetim panelinden ürün eklenmedi.</p>";return}
   box.innerHTML=items.map(p=>`<article class="item">
-    <div class="admin-gallery">${(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).map(src=>`<img src="${src}" alt="">`).join('')}</div>
-    <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${(Array.isArray(p.images)&&p.images.length?p.images.length:1)} fotoğraf · ${escapeHtml(p.price)}</p>
+    <img src="${p.image}" alt="">
+    <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${escapeHtml(p.price)}</p>
     <button class="delete" data-id="${p.id}">Ürünü sil</button></div></article>`).join("");
   box.querySelectorAll(".delete").forEach(b=>b.onclick=async()=>{
     if(!confirm("Bu ürünü silmek istediğine emin misin?"))return;

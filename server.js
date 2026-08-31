@@ -57,9 +57,10 @@ app.get("/api/products", (_, res) => res.json(readProducts()));
 app.post("/api/products", auth, upload.array("images", 12), (req, res) => {
   const { name, category, type, price, oldPrice, tag, description } = req.body;
   if (!name || !category) return res.status(400).json({ error: "Ürün adı ve kategori zorunlu." });
-  if (!req.files || !req.files.length) return res.status(400).json({ error: "En az bir ürün fotoğrafı seç." });
+  if (!req.files || !req.files.length) return res.status(400).json({ error: "En az 1 ürün fotoğrafı seç." });
 
   const products = readProducts();
+  const images = req.files.map(file => `/uploads/${file.filename}`);
   const product = {
     id: crypto.randomUUID(),
     name: name.trim(),
@@ -69,8 +70,8 @@ app.post("/api/products", auth, upload.array("images", 12), (req, res) => {
     oldPrice: (oldPrice || "").trim(),
     tag: (tag || "").trim(),
     description: (description || "").trim(),
-    image: `/uploads/${req.files[0].filename}`,
-    images: req.files.map(file => `/uploads/${file.filename}`),
+    image: images[0],
+    images,
     createdAt: new Date().toISOString()
   };
   products.unshift(product);
@@ -82,18 +83,18 @@ app.delete("/api/products/:id", auth, (req, res) => {
   const products = readProducts();
   const product = products.find(p => p.id === req.params.id);
   if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
-  const imageList = Array.isArray(product.images) && product.images.length ? product.images : (product.image ? [product.image] : []);
-  imageList.forEach(src => {
-    if (src && src.startsWith("/uploads/")) {
-      const file = path.join(UPLOAD_DIR, path.basename(src));
+  const productImages = Array.isArray(product.images) && product.images.length ? product.images : [product.image];
+  for (const image of productImages) {
+    if (image && image.startsWith("/uploads/")) {
+      const file = path.join(UPLOAD_DIR, path.basename(image));
       if (fs.existsSync(file)) fs.unlinkSync(file);
     }
-  });
+  }
   writeProducts(products.filter(p => p.id !== req.params.id));
   res.json({ ok: true });
 });
 
-app.put("/api/products/:id", auth, upload.array("images", 12), (req, res) => {
+app.put("/api/products/:id", auth, upload.single("image"), (req, res) => {
   const products = readProducts();
   const i = products.findIndex(p => p.id === req.params.id);
   if (i < 0) return res.status(404).json({ error: "Ürün bulunamadı." });
@@ -109,16 +110,12 @@ app.put("/api/products/:id", auth, upload.array("images", 12), (req, res) => {
     tag: (req.body.tag || "").trim(),
     description: (req.body.description || "").trim()
   };
-  if (req.files && req.files.length) {
-    const oldImages = Array.isArray(old.images) && old.images.length ? old.images : (old.image ? [old.image] : []);
-    oldImages.forEach(src => {
-      if (src && src.startsWith("/uploads/")) {
-        const oldFile = path.join(UPLOAD_DIR, path.basename(src));
-        if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
-      }
-    });
-    updated.image = `/uploads/${req.files[0].filename}`;
-    updated.images = req.files.map(file => `/uploads/${file.filename}`);
+  if (req.file) {
+    if (old.image && old.image.startsWith("/uploads/")) {
+      const oldFile = path.join(UPLOAD_DIR, path.basename(old.image));
+      if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
+    }
+    updated.image = `/uploads/${req.file.filename}`;
   }
   products[i] = updated;
   writeProducts(products);
