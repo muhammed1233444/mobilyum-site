@@ -92,12 +92,12 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
 /* Mobilyum yönetim panelinden eklenen ürünleri ana siteye getirir. */
 (async function loadManagedProducts(){
   try{
-    const res = await fetch('/api/products');
+    const res=await fetch('/api/products');
     if(!res.ok) return;
-    const products = await res.json();
-    if(!Array.isArray(products) || !products.length) return;
+    const products=await res.json();
+    if(!Array.isArray(products)||!products.length) return;
 
-    const groups = {
+    const groups={
       "Yatak Odaları":"urunler-yatak",
       "Oturma Grupları":"urunler-oturma",
       "Yemek Odaları":"urunler-yemek",
@@ -105,8 +105,19 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
     };
     const whatsapp="905446504459";
     const escape=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+
+    const gallery=(p)=>{
+      const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
+      const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?" active":""}" src="${escape(src)}" alt="${escape(p.name)}" data-index="${i}" loading="lazy">`).join("");
+      const controls=imgs.length>1?`
+        <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
+        <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
+        <div class="managed-gallery-dots">${imgs.map((_,i)=>`<button type="button" class="managed-gallery-dot${i===0?" active":""}" data-gallery-index="${i}" aria-label="Fotoğraf ${i+1}"></button>`).join("")}</div>`:"";
+      return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escape(p.tag)}</span>`:""}${controls}</div>`;
+    };
+
     const card=p=>`<article class="product-card managed-product">
-      <div class="product-image"><img src="${escape(p.image)}" alt="${escape(p.name)}">${p.tag?`<span class="product-tag">${escape(p.tag)}</span>`:""}</div>
+      ${gallery(p)}
       <div class="product-info"><p>${escape(p.type||"Mobilya")}</p><h4>${escape(p.name)}</h4>
       <span>${escape(p.price||"Fiyat için bilgi alın")}</span>
       ${p.description?`<small class="managed-desc">${escape(p.description)}</small>`:""}
@@ -114,8 +125,8 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
     </article>`;
 
     products.forEach(p=>{
-      let groupId=groups[p.category];
-      let group=groupId && document.getElementById(groupId);
+      const groupId=groups[p.category];
+      let group=groupId&&document.getElementById(groupId);
       if(!group){
         const container=document.querySelector('.products');
         if(!container)return;
@@ -129,3 +140,42 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
     });
   }catch(e){ console.warn("Yönetim ürünleri yüklenemedi.",e); }
 })();
+
+/* Yönetim ürün galerileri: ok, nokta ve mobil kaydırma. */
+(function initManagedGalleries(){
+  const setIndex=(gallery,index)=>{
+    const imgs=[...gallery.querySelectorAll('.managed-gallery-img')];
+    if(!imgs.length)return;
+    index=(index+imgs.length)%imgs.length;
+    imgs.forEach((img,i)=>img.classList.toggle('active',i===index));
+    gallery.querySelectorAll('.managed-gallery-dot').forEach((dot,i)=>dot.classList.toggle('active',i===index));
+    gallery.dataset.galleryIndex=index;
+  };
+  document.addEventListener('click',e=>{
+    const next=e.target.closest('.managed-gallery-next');
+    const prev=e.target.closest('.managed-gallery-prev');
+    const dot=e.target.closest('.managed-gallery-dot');
+    if(!next&&!prev&&!dot)return;
+    e.preventDefault();
+    e.stopPropagation();
+    const gallery=e.target.closest('.managed-gallery');
+    if(!gallery)return;
+    const current=Number(gallery.dataset.galleryIndex||0);
+    if(next)setIndex(gallery,current+1);
+    else if(prev)setIndex(gallery,current-1);
+    else setIndex(gallery,Number(dot.dataset.galleryIndex||0));
+  });
+  document.addEventListener('touchstart',e=>{
+    const gallery=e.target.closest('.managed-gallery');
+    if(gallery) gallery._touchX=e.touches[0].clientX;
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    const gallery=e.target.closest('.managed-gallery');
+    if(!gallery||gallery._touchX==null)return;
+    const dx=e.changedTouches[0].clientX-gallery._touchX;
+    gallery._touchX=null;
+    if(Math.abs(dx)<40)return;
+    const current=Number(gallery.dataset.galleryIndex||0);
+    setIndex(gallery,dx<0?current+1:current-1);
+  },{passive:true});
+})();;
