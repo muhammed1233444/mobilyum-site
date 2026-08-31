@@ -3,7 +3,6 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mobilyum · Ürün Yönetimi</title>
-<link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
@@ -37,11 +36,7 @@
           <label>Eski fiyat<input name="oldPrice" placeholder="İsteğe bağlı"></label>
           <label>Etiket<input name="tag" placeholder="Yeni / Premium / Öne Çıkan"></label>
           <label class="full">Açıklama<textarea name="description" placeholder="Kısa ürün açıklaması"></textarea></label>
-          <label class="full">Ürün fotoğrafları*
-            <input id="imageInput" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required>
-            <small>En fazla 12 fotoğraf. İlk seçtiğin fotoğraf kapak fotoğrafı olur.</small>
-            <div id="imagePreview" class="image-preview"></div>
-          </label>
+          <label class="full">Ürün fotoğrafları*<input name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required><small>Bir ürüne en fazla 12 fotoğraf seçebilirsin. İlk fotoğraf kapak olur.</small></label>
         </div>
         <button class="save" type="submit">Ürünü kaydet</button>
         <div id="formMsg" class="msg"></div>

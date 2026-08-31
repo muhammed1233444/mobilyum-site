@@ -82,12 +82,10 @@ app.delete("/api/products/:id", auth, (req, res) => {
   const products = readProducts();
   const product = products.find(p => p.id === req.params.id);
   if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
-  const productImages = Array.isArray(product.images) && product.images.length
-    ? product.images
-    : (product.image ? [product.image] : []);
-  productImages.forEach(image => {
-    if (image && image.startsWith("/uploads/")) {
-      const file = path.join(UPLOAD_DIR, path.basename(image));
+  const imageList = Array.isArray(product.images) && product.images.length ? product.images : (product.image ? [product.image] : []);
+  imageList.forEach(src => {
+    if (src && src.startsWith("/uploads/")) {
+      const file = path.join(UPLOAD_DIR, path.basename(src));
       if (fs.existsSync(file)) fs.unlinkSync(file);
     }
   });
@@ -112,12 +110,10 @@ app.put("/api/products/:id", auth, upload.array("images", 12), (req, res) => {
     description: (req.body.description || "").trim()
   };
   if (req.files && req.files.length) {
-    const oldImages = Array.isArray(old.images) && old.images.length
-      ? old.images
-      : (old.image ? [old.image] : []);
-    oldImages.forEach(image => {
-      if (image && image.startsWith("/uploads/")) {
-        const oldFile = path.join(UPLOAD_DIR, path.basename(image));
+    const oldImages = Array.isArray(old.images) && old.images.length ? old.images : (old.image ? [old.image] : []);
+    oldImages.forEach(src => {
+      if (src && src.startsWith("/uploads/")) {
+        const oldFile = path.join(UPLOAD_DIR, path.basename(src));
         if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile);
       }
     });
