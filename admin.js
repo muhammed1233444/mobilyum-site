@@ -50,10 +50,11 @@ $("#imageInput").onchange=e=>{
 };
 
 async function optimizeImage(file) {
-  // Büyük telefon fotoğraflarını tarayıcıda küçültür; yükleme daha hızlı ve güvenilir olur.
-  if (file.size <= 1800 * 1024 && /^image\/(jpeg|jpg|webp)$/i.test(file.type)) return file;
+  // Telefon fotoğraflarını her zaman web için küçültüyoruz. Böylece 8-12 fotoğraflı
+  // bir ürün Railway'e tek seferde çok büyük bir istek göndermiyor.
+  if (!file.type.startsWith("image/")) throw new Error("Geçersiz fotoğraf dosyası.");
   const bitmap = await createImageBitmap(file);
-  const maxSide = 1800;
+  const maxSide = 1400;
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
@@ -61,8 +62,9 @@ async function optimizeImage(file) {
   const ctx = canvas.getContext("2d", {alpha:false});
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  const blob = await new Promise(resolve=>canvas.toBlob(resolve, "image/jpeg", 0.82));
+  const blob = await new Promise(resolve=>canvas.toBlob(resolve, "image/jpeg", 0.74));
   if (!blob) throw new Error("Fotoğraf hazırlanamadı.");
+  if (blob.size > 5 * 1024 * 1024) throw new Error("Fotoğraf çok büyük. Daha küçük bir fotoğraf seç.");
   return new File([blob], (file.name.replace(/\.[^.]+$/, "") || "foto") + ".jpg", {type:"image/jpeg"});
 }
 
@@ -81,9 +83,12 @@ $("#productForm").onsubmit=async e=>{
       const optimized = await optimizeImage(file);
       fd.append("images", optimized, optimized.name);
     }
-    await api("/api/products",{method:"POST",body:fd});
-    e.target.reset(); msg.textContent="Ürün başarıyla eklendi."; load();
-  }catch(err){msg.textContent=err.message}
+    const saved=await api("/api/products",{method:"POST",body:fd});
+    e.target.reset();
+    document.querySelector("#imagePreview").innerHTML="";
+    msg.textContent=`Ürün başarıyla eklendi (${Array.isArray(saved.images)?saved.images.length:1} fotoğraf).`;
+    await load();
+  }catch(err){msg.textContent=err.message||"Ürün kaydedilemedi."}
 };
 async function load(){
   const items=await api("/api/products");

@@ -27,7 +27,10 @@ function readProducts() {
   catch { return []; }
 }
 function writeProducts(products) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(products, null, 2), "utf8");
+  // JSON'u atomik şekilde değiştir; yarım yazılmış dosya yüzünden ürün listesi bozulmasın.
+  const tmp = DATA_FILE + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(products, null, 2), "utf8");
+  fs.renameSync(tmp, DATA_FILE);
 }
 function auth(req, res, next) {
   if (!ADMIN_PASSWORD) return res.status(500).json({ error: "ADMIN_PASSWORD ayarlanmamış." });
@@ -45,7 +48,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024, files: 12, parts: 24 },
   fileFilter: (_, file, cb) => {
     if (/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) cb(null, true);
     else cb(new Error("Sadece JPG, PNG, WEBP veya GIF yükleyebilirsin."));
@@ -56,13 +59,18 @@ app.get("/api/products", (_, res) => res.json(readProducts()));
 app.get("/api/admin/check", auth, (_, res) => res.json({ ok: true }));
 
 app.post("/api/products", auth, upload.array("images", 12), (req, res) => {
-  const { name, category, type, price, oldPrice, tag, description } = req.body;
-  if (!name || !category) return res.status(400).json({ error: "Ürün adı ve kategori zorunlu." });
-  if (!req.files || !req.files.length) return res.status(400).json({ error: "En az bir ürün fotoğrafı seç." });
-  if (req.files.some(file => !file.filename)) return res.status(400).json({ error: "Fotoğraf yükleme başarısız." });
+  const files = req.files || [];
+  const cleanup = () => files.forEach(file => {
+    if (file?.path && fs.existsSync(file.path)) { try { fs.unlinkSync(file.path); } catch {} }
+  });
+  try {
+    const { name, category, type, price, oldPrice, tag, description } = req.body;
+    if (!name || !category) { cleanup(); return res.status(400).json({ error: "Ürün adı ve kategori zorunlu." }); }
+    if (!files.length) return res.status(400).json({ error: "En az bir ürün fotoğrafı seç." });
+    if (files.some(file => !file.filename)) { cleanup(); return res.status(400).json({ error: "Fotoğraf yükleme başarısız." }); }
 
-  const products = readProducts();
-  const product = {
+    const products = readProducts();
+    const product = {
     id: crypto.randomUUID(),
     name: name.trim(),
     category: category.trim(),
@@ -75,9 +83,14 @@ app.post("/api/products", auth, upload.array("images", 12), (req, res) => {
     images: req.files.map(file => `/uploads/${file.filename}`),
     createdAt: new Date().toISOString()
   };
-  products.unshift(product);
-  writeProducts(products);
-  res.json(product);
+    products.unshift(product);
+    writeProducts(products);
+    res.json(product);
+  } catch (err) {
+    cleanup();
+    console.error("Ürün kaydetme hatası:", err);
+    res.status(500).json({ error: "Ürün kaydedilemedi. Sunucu depolama alanını kontrol et." });
+  }
 });
 
 app.delete("/api/products/:id", auth, (req, res) => {

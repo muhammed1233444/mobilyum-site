@@ -65,80 +65,90 @@ window.addEventListener('mousemove',e=>{if(dot){dot.style.left=e.clientX+'px';do
 document.addEventListener('mouseenter',e=>{const el=e.target.closest?.('a,button');if(el&&dot){dot.style.width='15px';dot.style.height='15px'}},{capture:true});
 document.addEventListener('mouseleave',e=>{const el=e.target.closest?.('a,button');if(el&&dot){dot.style.width='9px';dot.style.height='9px'}},{capture:true});
 
-// Dedicated category views
+// Dedicated category views — ürünler yalnızca admin panelinden gelir.
 const categoryPage=document.getElementById('category-page');
 const title=document.getElementById('category-page-title');
 const desc=document.getElementById('category-page-desc');
-const products=document.getElementById('category-page-products');
+const categoryProducts=document.getElementById('category-page-products');
+const managedContainer=document.getElementById('managed-products');
+let managedProducts=[];
+let managedProductsReady=Promise.resolve([]);
 const categoryData={
- yatak:['urunler-yatak','Yatak <em>Odaları</em>','Yeni sezon yatak odası modellerimizi inceleyin.'],
- oturma:['urunler-oturma','Oturma <em>Grupları</em>','Konforu ve modern çizgileri bir araya getiren modeller.'],
- yemek:['urunler-yemek','Yemek <em>Odaları</em>','Masa, sandalye, konsol ve tamamlayıcı modeller.']
+ yatak:{name:'Yatak Odaları',title:'Yatak <em>Odaları</em>',desc:'Yeni sezon yatak odası modellerimizi inceleyin.'},
+ oturma:{name:'Oturma Grupları',title:'Oturma <em>Grupları</em>',desc:'Konforu ve modern çizgileri bir araya getiren modeller.'},
+ yemek:{name:'Yemek Odaları',title:'Yemek <em>Odaları</em>',desc:'Masa, sandalye, konsol ve tamamlayıcı modeller.'},
+ genc:{name:'Genç Odaları',title:'Genç <em>Odaları</em>',desc:'Genç odası modellerimizi inceleyin.'}
 };
-function openCategory(k){
- const d=categoryData[k]; if(!d)return;
- const g=document.querySelector('#'+d[0]+' .product-grid');
- title.innerHTML=d[1];desc.textContent=d[2];
- products.innerHTML=g?g.innerHTML:'<p>Ürünler hazırlanıyor.</p>';
- categoryPage.classList.add('open');categoryPage.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
- history.pushState({category:k},'', '#kategori/'+k);
- requestAnimationFrame(()=>requestAnimationFrame(()=>categoryPage.classList.add('page-ready')));
+const categoryIds={'Yatak Odaları':'urunler-yatak','Oturma Grupları':'urunler-oturma','Yemek Odaları':'urunler-yemek','Genç Odaları':'urunler-genc'};
+const escapeHtml=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const whatsapp='905446504459';
+
+function galleryHtml(p){
+  const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
+  const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" data-index="${i}" loading="lazy">`).join('');
+  const controls=imgs.length>1?`
+    <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
+    <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
+    <div class="managed-gallery-dots">${imgs.map((_,i)=>`<button type="button" class="managed-gallery-dot${i===0?' active':''}" data-gallery-index="${i}" aria-label="Fotoğraf ${i+1}"></button>`).join('')}</div>`:'';
+  return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escapeHtml(p.tag)}</span>`:''}${controls}</div>`;
+}
+function productCardHtml(p){
+  return `<article class="product-card managed-product">
+    ${galleryHtml(p)}
+    <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h4>${escapeHtml(p.name)}</h4>
+    <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
+    ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
+    <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank">WhatsApp'tan bilgi al ↗</a></div>
+  </article>`;
+}
+function renderManagedProducts(){
+  if(!managedContainer)return;
+  managedContainer.innerHTML='';
+  const order=['Yatak Odaları','Oturma Grupları','Yemek Odaları','Genç Odaları'];
+  const cats=[...order,...managedProducts.map(p=>p.category).filter(c=>c&&!order.includes(c))];
+  [...new Set(cats)].forEach((category,i)=>{
+    const list=managedProducts.filter(p=>p.category===category);
+    if(!list.length)return;
+    const group=document.createElement('div');
+    group.className='product-group reveal';
+    group.id=categoryIds[category]||('managed-'+i);
+    group.innerHTML=`<div class="group-title"><span>${String(i+1).padStart(2,'0')}</span><h3>${escapeHtml(category)}</h3><em>${list.length} model</em></div><div class="product-grid"></div>`;
+    group.querySelector('.product-grid').innerHTML=list.map(productCardHtml).join('');
+    managedContainer.appendChild(group);
+  });
+}
+function renderCategory(k){
+  const d=categoryData[k];
+  if(!d)return;
+  title.innerHTML=d.title;
+  desc.textContent=d.desc;
+  const list=managedProducts.filter(p=>p.category===d.name);
+  categoryProducts.innerHTML=list.length?list.map(productCardHtml).join(''):'<div class="empty-products"><div><span>ŞU ANDA ÜRÜN YOK</span><h4>Yakında burada.</h4><p>Bu kategorideki ürünler mağaza yönetim panelinden eklenecek.</p></div></div>';
+}
+async function openCategory(k, push=true){
+  const d=categoryData[k]; if(!d)return;
+  await managedProductsReady;
+  renderCategory(k);
+  categoryPage.classList.add('open');categoryPage.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
+  if(push)history.pushState({category:k},'', '#kategori/'+k);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>categoryPage.classList.add('page-ready')));
 }
 function closeCategory(){if(!categoryPage)return;categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/'))history.pushState({},'',location.pathname+location.search);}
 document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();openCategory(x.dataset.category)}));
 document.querySelector('.category-page-close')?.addEventListener('click',closeCategory);
-window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1]);else{closeCategory();closeModal();}});
+window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1],false);else{closeCategory();closeModal();}});
 
-/* Mobilyum yönetim panelinden eklenen ürünleri ana siteye getirir. */
-(async function loadManagedProducts(){
+/* Admin panelindeki ürünleri tek kaynak olarak kullanır. */
+managedProductsReady=(async()=>{
   try{
-    const res=await fetch('/api/products');
-    if(!res.ok) return;
-    const products=await res.json();
-    if(!Array.isArray(products)||!products.length) return;
-
-    const groups={
-      "Yatak Odaları":"urunler-yatak",
-      "Oturma Grupları":"urunler-oturma",
-      "Yemek Odaları":"urunler-yemek",
-      "Genç Odaları":"urunler-genc"
-    };
-    const whatsapp="905446504459";
-    const escape=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-
-    const gallery=(p)=>{
-      const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
-      const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?" active":""}" src="${escape(src)}" alt="${escape(p.name)}" data-index="${i}" loading="lazy">`).join("");
-      const controls=imgs.length>1?`
-        <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
-        <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
-        <div class="managed-gallery-dots">${imgs.map((_,i)=>`<button type="button" class="managed-gallery-dot${i===0?" active":""}" data-gallery-index="${i}" aria-label="Fotoğraf ${i+1}"></button>`).join("")}</div>`:"";
-      return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escape(p.tag)}</span>`:""}${controls}</div>`;
-    };
-
-    const card=p=>`<article class="product-card managed-product">
-      ${gallery(p)}
-      <div class="product-info"><p>${escape(p.type||"Mobilya")}</p><h4>${escape(p.name)}</h4>
-      <span>${escape(p.price||"Fiyat için bilgi alın")}</span>
-      ${p.description?`<small class="managed-desc">${escape(p.description)}</small>`:""}
-      <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent("Merhaba Mobilyum, "+p.name+" hakkında bilgi almak istiyorum.")}" target="_blank">WhatsApp'tan bilgi al ↗</a></div>
-    </article>`;
-
-    products.forEach(p=>{
-      const groupId=groups[p.category];
-      let group=groupId&&document.getElementById(groupId);
-      if(!group){
-        const container=document.querySelector('.products');
-        if(!container)return;
-        group=document.createElement('div');
-        group.className='product-group reveal';
-        group.id='managed-'+p.id;
-        group.innerHTML=`<div class="group-title"><span>+</span><h3>${escape(p.category)}</h3><em>Yönetim paneli</em></div><div class="product-grid"></div>`;
-        container.appendChild(group);
-      }
-      group.querySelector('.product-grid').insertAdjacentHTML('beforeend',card(p));
-    });
-  }catch(e){ console.warn("Yönetim ürünleri yüklenemedi.",e); }
+    const res=await fetch('/api/products',{cache:'no-store'});
+    if(!res.ok) throw new Error(`Ürünler alınamadı (${res.status})`);
+    const data=await res.json();
+    managedProducts=Array.isArray(data)?data:[];
+    renderManagedProducts();
+    if(location.hash.startsWith('#kategori/')) openCategory(location.hash.split('/')[1],false);
+  }catch(e){console.warn('Yönetim ürünleri yüklenemedi.',e);managedProducts=[];renderManagedProducts();}
+  return managedProducts;
 })();
 
 /* Yönetim ürün galerileri: ok, nokta ve mobil kaydırma. */
