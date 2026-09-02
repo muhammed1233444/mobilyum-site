@@ -51,7 +51,7 @@ h1 em,h2 em,h4 em{font-style:italic;color:#8d745b}
 
 .category-grid{padding:0 5vw 125px;display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
 .category-card{position:relative;min-height:470px;overflow:hidden;background:#e7ddd0}
-.category-card:nth-child(1){min-height:640px;grid-row:span 2}
+.category-card:nth-child(1){min-height:640px;grid-row:span 2}.category-card:nth-child(4){grid-column:1/-1;min-height:380px}
 .category-card img{transition:transform .7s}.category-card:hover img{transform:scale(1.035)}
 .category-content{position:absolute;left:0;right:0;bottom:0;padding:90px 35px 30px;color:#fff;background:linear-gradient(transparent,rgba(25,20,16,.82))}
 .category-content span{font-size:8px;letter-spacing:.2em;opacity:.72}.category-content h3{font-size:34px;margin:4px 0}.category-content p{font-size:11px;margin:0 0 12px;opacity:.8}.category-content b{font-size:10px;font-weight:500;border-bottom:1px solid rgba(255,255,255,.55);padding-bottom:4px}
@@ -107,7 +107,7 @@ footer{border-top:1px solid var(--line);padding:30px 5vw;display:flex;align-item
  .hero{display:flex;flex-direction:column}.hero-copy{padding:65px 7vw 55px}.hero-image{min-height:560px}.hero-text{font-size:14px}
  .trust-strip{grid-template-columns:1fr 1fr}.trust-strip div{padding:20px 6vw}.trust-strip div:nth-child(2){border-right:0}.trust-strip div:nth-child(-n+2){border-bottom:1px solid var(--line)}
  .intro{grid-template-columns:1fr;padding:80px 7vw 45px;gap:30px}
- .category-grid{grid-template-columns:1fr;padding:0 5vw 80px}.category-card,.category-card:nth-child(1){min-height:470px;grid-row:auto}
+ .category-grid{grid-template-columns:1fr;padding:0 5vw 80px}.category-card,.category-card:nth-child(1){min-height:470px;grid-row:auto}.category-card:nth-child(4){grid-column:auto;min-height:470px}
  .category-art{min-height:470px}
  .section-head{grid-template-columns:1fr;padding:20px 7vw 45px;gap:30px}.products{padding:0 5vw 80px}.product-grid{grid-template-columns:1fr}.product-image{height:460px}
  .campaign{grid-template-columns:1fr;margin:0 5vw 80px}.campaign-image{min-height:420px}.campaign-copy{padding:45px 30px}.campaign-points{grid-template-columns:1fr}
@@ -364,3 +364,35 @@ justify-content: center; font-size:18px;line-height:1}
 /* Yönetim ürün çoklu fotoğraf galerisi */
 .managed-gallery{touch-action:pan-y}.managed-gallery-img{position:absolute;inset:0;width:100%;height:100%;opacity:0;visibility:hidden;transition:opacity .35s ease;transform:none!important}.managed-gallery-img.active{opacity:1;visibility:visible}.managed-gallery-btn{position:absolute;top:50%;transform:translateY(-50%);width:38px;height:38px;border:1px solid rgba(255,255,255,.75);border-radius:50%;background:rgba(41,37,31,.5);color:#fff;font-size:25px;line-height:34px;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:4;backdrop-filter:blur(5px)}.managed-gallery-btn:hover{background:rgba(41,37,31,.75)}.managed-gallery-prev{left:12px}.managed-gallery-next{right:12px}.managed-gallery-dots{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:flex;gap:6px;z-index:4;padding:6px 8px;border-radius:20px;background:rgba(41,37,31,.35);backdrop-filter:blur(4px)}.managed-gallery-dot{width:7px;height:7px;border:0;border-radius:50%;padding:0;background:rgba(255,255,255,.55);cursor:pointer}.managed-gallery-dot.active{background:#fff}.managed-gallery .product-tag{z-index:5}.managed-gallery:has(.managed-gallery-img:nth-child(2)) .managed-gallery-img{cursor:zoom-in}
 @media(max-width:700px){.managed-gallery-btn{width:34px;height:34px;font-size:22px}.managed-gallery-prev{left:9px}.managed-gallery-next{right:9px}.managed-gallery-dots{bottom:9px}.managed-gallery-dot{width:6px;height:6px}}
+
+
+
+/* 4 kategori eşit boyutta */
+.category-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+
+.category-grid .category-card{
+  height:250px !important;
+  min-height:250px !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+}
+
+.category-grid .category-card img{
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+}
+
+/* Telefon */
+@media(max-width:800px){
+  .category-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+
+  .category-grid .category-card{
+    height:190px !important;
+    min-height:190px !important;
+  }
+}
