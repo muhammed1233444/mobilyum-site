@@ -92,12 +92,12 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
 /* Mobilyum yönetim panelinden eklenen ürünleri ana siteye getirir. */
 (async function loadManagedProducts(){
   try{
-    const res = await fetch('/api/products');
+    const res=await fetch('/api/products');
     if(!res.ok) return;
-    const managed = await res.json();
-    if(!Array.isArray(managed) || !managed.length) return;
+    const products=await res.json();
+    if(!Array.isArray(products)||!products.length) return;
 
-    const groups = {
+    const groups={
       "Yatak Odaları":"urunler-yatak",
       "Oturma Grupları":"urunler-oturma",
       "Yemek Odaları":"urunler-yemek",
@@ -105,21 +105,28 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
     };
     const whatsapp="905446504459";
     const escape=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
-    const productImages=p=>Array.isArray(p.images)&&p.images.length?p.images:(p.image?[p.image]:[]);
-    const card=p=>{
-      const imgs=productImages(p);
-      const slider=imgs.length>1 ? `<div class="managed-product-slider" data-managed-slider>
-        <div class="managed-product-track">${imgs.map((src,i)=>`<div class="managed-product-slide${i===0?' is-active':''}"><img src="${escape(src)}" alt="${escape(p.name)} - ${i+1}"></div>`).join('')}</div>
-        <button type="button" class="managed-product-prev" aria-label="Önceki fotoğraf">‹</button>
-        <button type="button" class="managed-product-next" aria-label="Sonraki fotoğraf">›</button>
-        <div class="managed-product-dots">${imgs.map((_,i)=>`<button type="button" class="managed-product-dot${i===0?' is-active':''}" aria-label="${i+1}. fotoğraf"></button>`).join('')}</div>
-      </div>` : `<div class="product-image"><img src="${escape(imgs[0]||'')}" alt="${escape(p.name)}"></div>`;
-      return `<article class="product-card managed-product">${slider}<div class="product-info"><p>${escape(p.type||"Mobilya")}</p><h4>${escape(p.name)}</h4><span>${escape(p.price||"Fiyat için bilgi alın")}</span>${p.description?`<small class="managed-desc">${escape(p.description)}</small>`:""}<a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent("Merhaba Mobilyum, "+p.name+" hakkında bilgi almak istiyorum.")}" target="_blank">WhatsApp'tan bilgi al ↗</a></div></article>`;
+
+    const gallery=(p)=>{
+      const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
+      const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?" active":""}" src="${escape(src)}" alt="${escape(p.name)}" data-index="${i}" loading="lazy">`).join("");
+      const controls=imgs.length>1?`
+        <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
+        <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
+        <div class="managed-gallery-dots">${imgs.map((_,i)=>`<button type="button" class="managed-gallery-dot${i===0?" active":""}" data-gallery-index="${i}" aria-label="Fotoğraf ${i+1}"></button>`).join("")}</div>`:"";
+      return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escape(p.tag)}</span>`:""}${controls}</div>`;
     };
 
-    managed.forEach(p=>{
-      let groupId=groups[p.category];
-      let group=groupId && document.getElementById(groupId);
+    const card=p=>`<article class="product-card managed-product">
+      ${gallery(p)}
+      <div class="product-info"><p>${escape(p.type||"Mobilya")}</p><h4>${escape(p.name)}</h4>
+      <span>${escape(p.price||"Fiyat için bilgi alın")}</span>
+      ${p.description?`<small class="managed-desc">${escape(p.description)}</small>`:""}
+      <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent("Merhaba Mobilyum, "+p.name+" hakkında bilgi almak istiyorum.")}" target="_blank">WhatsApp'tan bilgi al ↗</a></div>
+    </article>`;
+
+    products.forEach(p=>{
+      const groupId=groups[p.category];
+      let group=groupId&&document.getElementById(groupId);
       if(!group){
         const container=document.querySelector('.products');
         if(!container)return;
@@ -131,29 +138,44 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
       }
       group.querySelector('.product-grid').insertAdjacentHTML('beforeend',card(p));
     });
-
-    document.querySelectorAll('[data-managed-slider]').forEach(slider=>{
-      const track=slider.querySelector('.managed-product-track');
-      const slides=[...slider.querySelectorAll('.managed-product-slide')];
-      const dots=[...slider.querySelectorAll('.managed-product-dot')];
-      if(slides.length<2)return;
-      let index=0,startX=0;
-      const go=i=>{index=(i+slides.length)%slides.length;track.style.transform=`translate3d(${-index*100}%,0,0)`;slides.forEach((x,n)=>x.classList.toggle('is-active',n===index));dots.forEach((x,n)=>x.classList.toggle('is-active',n===index));};
-      slider.querySelector('.managed-product-prev')?.addEventListener('click',()=>go(index-1));
-      slider.querySelector('.managed-product-next')?.addEventListener('click',()=>go(index+1));
-      dots.forEach((d,n)=>d.addEventListener('click',()=>go(n)));
-      slider.addEventListener('touchstart',e=>startX=e.touches[0].clientX,{passive:true});
-      slider.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX;if(Math.abs(dx)>40)go(index+(dx<0?1:-1));},{passive:true});
-    });
-
-    // If a category modal is already open, rebuild it after API products arrive.
-    if(categoryPage && categoryPage.classList.contains('open')){
-      const hash=location.hash.match(/^#kategori\/(.+)$/);
-      if(hash){
-        const d=categoryData[hash[1]];
-        const g=d && document.querySelector('#'+d[0]+' .product-grid');
-        if(g) products.innerHTML=g.innerHTML;
-      }
-    }
   }catch(e){ console.warn("Yönetim ürünleri yüklenemedi.",e); }
 })();
+
+/* Yönetim ürün galerileri: ok, nokta ve mobil kaydırma. */
+(function initManagedGalleries(){
+  const setIndex=(gallery,index)=>{
+    const imgs=[...gallery.querySelectorAll('.managed-gallery-img')];
+    if(!imgs.length)return;
+    index=(index+imgs.length)%imgs.length;
+    imgs.forEach((img,i)=>img.classList.toggle('active',i===index));
+    gallery.querySelectorAll('.managed-gallery-dot').forEach((dot,i)=>dot.classList.toggle('active',i===index));
+    gallery.dataset.galleryIndex=index;
+  };
+  document.addEventListener('click',e=>{
+    const next=e.target.closest('.managed-gallery-next');
+    const prev=e.target.closest('.managed-gallery-prev');
+    const dot=e.target.closest('.managed-gallery-dot');
+    if(!next&&!prev&&!dot)return;
+    e.preventDefault();
+    e.stopPropagation();
+    const gallery=e.target.closest('.managed-gallery');
+    if(!gallery)return;
+    const current=Number(gallery.dataset.galleryIndex||0);
+    if(next)setIndex(gallery,current+1);
+    else if(prev)setIndex(gallery,current-1);
+    else setIndex(gallery,Number(dot.dataset.galleryIndex||0));
+  });
+  document.addEventListener('touchstart',e=>{
+    const gallery=e.target.closest('.managed-gallery');
+    if(gallery) gallery._touchX=e.touches[0].clientX;
+  },{passive:true});
+  document.addEventListener('touchend',e=>{
+    const gallery=e.target.closest('.managed-gallery');
+    if(!gallery||gallery._touchX==null)return;
+    const dx=e.changedTouches[0].clientX-gallery._touchX;
+    gallery._touchX=null;
+    if(Math.abs(dx)<40)return;
+    const current=Number(gallery.dataset.galleryIndex||0);
+    setIndex(gallery,dx<0?current+1:current-1);
+  },{passive:true});
+})();;
