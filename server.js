@@ -9,8 +9,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "";
 const ROOT = __dirname;
-const DATA_DIR = path.join(ROOT, "data");
-const UPLOAD_DIR = path.join(ROOT, "uploads");
+const STORAGE_DIR = path.join(ROOT, "storage");
+const DATA_DIR = path.join(STORAGE_DIR, "data");
+const UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
 const DATA_FILE = path.join(DATA_DIR, "products.json");
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
