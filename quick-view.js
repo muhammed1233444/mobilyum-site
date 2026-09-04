@@ -1,24 +1,21 @@
 (() => {
   const cardsSelector='[data-quick-view="1"]';
   const whatsapp='905446504459';
-  let modal=null;
+  let dialog=null;
   let activeCard=null;
   let returnFocus=null;
   let images=[];
   let imageIndex=0;
   let touchStartX=null;
+  let closeTimer=null;
 
-  const ensureModal=()=>{
-    if(modal)return modal;
-    const shell=document.createElement('div');
-    shell.className='quick-view';
+  const ensureDialog=()=>{
+    if(dialog)return dialog;
+    const shell=document.createElement('dialog');
+    shell.className='quick-view-dialog';
     shell.id='quick-view';
-    shell.setAttribute('role','dialog');
-    shell.setAttribute('aria-modal','true');
     shell.setAttribute('aria-labelledby','quick-view-title');
-    shell.setAttribute('aria-hidden','true');
     shell.innerHTML=`
-      <div class="quick-view-backdrop" data-quick-close></div>
       <div class="quick-view-box" role="document">
         <button class="quick-view-close" type="button" aria-label="Hızlı inceleme penceresini kapat">×</button>
         <div class="quick-view-media">
@@ -41,13 +38,16 @@
         </div>
       </div>`;
     document.body.appendChild(shell);
-    modal=shell;
+    dialog=shell;
 
-    modal.querySelector('.quick-view-close').addEventListener('click',close);
-    modal.querySelector('[data-quick-close]').addEventListener('click',close);
-    modal.querySelector('.quick-view-prev').addEventListener('click',()=>setImage(imageIndex-1));
-    modal.querySelector('.quick-view-next').addEventListener('click',()=>setImage(imageIndex+1));
-    const stage=modal.querySelector('.quick-view-stage');
+    dialog.querySelector('.quick-view-close').addEventListener('click',close);
+    dialog.querySelector('.quick-view-prev').addEventListener('click',()=>setImage(imageIndex-1));
+    dialog.querySelector('.quick-view-next').addEventListener('click',()=>setImage(imageIndex+1));
+    dialog.addEventListener('cancel',e=>{e.preventDefault();close()});
+    dialog.addEventListener('click',e=>{if(e.target===dialog)close()});
+    dialog.addEventListener('close',cleanupAfterClose);
+
+    const stage=dialog.querySelector('.quick-view-stage');
     stage.addEventListener('touchstart',e=>{touchStartX=e.touches[0]?.clientX??null},{passive:true});
     stage.addEventListener('touchend',e=>{
       if(touchStartX==null)return;
@@ -55,7 +55,7 @@
       const dx=x-touchStartX;touchStartX=null;
       if(Math.abs(dx)>45)setImage(imageIndex+(dx<0?1:-1));
     },{passive:true});
-    return modal;
+    return dialog;
   };
 
   function parseImages(card){
@@ -63,12 +63,13 @@
       const parsed=JSON.parse(card.dataset.qvImages||'[]');
       if(Array.isArray(parsed)&&parsed.length)return parsed.filter(Boolean);
     }catch{}
-    const src=card.querySelector('.product-image img')?.currentSrc||card.querySelector('.product-image img')?.src;
+    const img=card.querySelector('.product-image img');
+    const src=img?.currentSrc||img?.src||img?.dataset?.smartSrc||img?.dataset?.gallerySrc;
     return src?[src]:[];
   }
 
   function renderThumbs(){
-    const box=modal.querySelector('.quick-view-thumbs');
+    const box=dialog.querySelector('.quick-view-thumbs');
     box.innerHTML='';
     images.forEach((src,i)=>{
       const button=document.createElement('button');
@@ -85,25 +86,26 @@
   }
 
   function setImage(next){
-    if(!modal||!images.length)return;
+    if(!dialog||!images.length)return;
     imageIndex=(next+images.length)%images.length;
-    const main=modal.querySelector('.quick-view-main-image');
+    const main=dialog.querySelector('.quick-view-main-image');
     main.classList.remove('is-ready');
     main.alt=`${activeCard?.dataset.qvName||'Mobilyum ürünü'} · ${imageIndex+1}. fotoğraf`;
     main.onload=()=>main.classList.add('is-ready');
     main.onerror=()=>main.classList.add('is-ready');
     main.src=images[imageIndex];
     if(main.complete)main.classList.add('is-ready');
-    modal.querySelector('.quick-view-count').textContent=images.length>1?`${imageIndex+1} / ${images.length}`:'';
-    modal.querySelectorAll('.quick-view-thumb').forEach((b,i)=>b.classList.toggle('is-active',i===imageIndex));
+    dialog.querySelector('.quick-view-count').textContent=images.length>1?`${imageIndex+1} / ${images.length}`:'';
+    dialog.querySelectorAll('.quick-view-thumb').forEach((b,i)=>b.classList.toggle('is-active',i===imageIndex));
     const multi=images.length>1;
-    modal.querySelector('.quick-view-prev').hidden=!multi;
-    modal.querySelector('.quick-view-next').hidden=!multi;
+    dialog.querySelector('.quick-view-prev').hidden=!multi;
+    dialog.querySelector('.quick-view-next').hidden=!multi;
   }
 
   function open(card,trigger){
     if(!card)return;
-    ensureModal();
+    ensureDialog();
+    clearTimeout(closeTimer);
     activeCard=card;
     returnFocus=trigger instanceof HTMLElement?trigger:null;
     images=parseImages(card);
@@ -117,37 +119,36 @@
     const oldPrice=card.dataset.qvOldPrice||'';
     const description=card.dataset.qvDescription||'Bu modelin ölçü, renk, stok ve teslimat seçenekleri için ekibimizden bilgi alabilirsiniz.';
 
-    modal.querySelector('.quick-view-category').textContent=category.toUpperCase();
-    modal.querySelector('#quick-view-title').textContent=name;
-    modal.querySelector('.quick-view-type').textContent=type;
-    const tagEl=modal.querySelector('.quick-view-tag');
+    dialog.querySelector('.quick-view-category').textContent=category.toUpperCase();
+    dialog.querySelector('#quick-view-title').textContent=name;
+    dialog.querySelector('.quick-view-type').textContent=type;
+    const tagEl=dialog.querySelector('.quick-view-tag');
     tagEl.textContent=tag;tagEl.hidden=!tag;
-    modal.querySelector('.quick-view-description').textContent=description;
-    modal.querySelector('.quick-view-current-price').textContent=price;
-    const oldEl=modal.querySelector('.quick-view-old-price');
+    dialog.querySelector('.quick-view-description').textContent=description;
+    dialog.querySelector('.quick-view-current-price').textContent=price;
+    const oldEl=dialog.querySelector('.quick-view-old-price');
     oldEl.textContent=oldPrice;oldEl.hidden=!oldPrice;
-    const wa=modal.querySelector('.quick-view-whatsapp');
+    const wa=dialog.querySelector('.quick-view-whatsapp');
     wa.href=`https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+name+' hakkında bilgi almak istiyorum.')}`;
 
     renderThumbs();
     if(images.length)setImage(0);
-    else modal.querySelector('.quick-view-main-image').removeAttribute('src');
+    else dialog.querySelector('.quick-view-main-image').removeAttribute('src');
 
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden','false');
-    document.body.classList.add('quick-view-open');
-    document.documentElement.classList.add('quick-view-open');
-    requestAnimationFrame(()=>modal.classList.add('is-ready'));
-    modal.querySelector('.quick-view-close').focus();
+    if(!dialog.open)dialog.showModal();
+    requestAnimationFrame(()=>requestAnimationFrame(()=>dialog.classList.add('is-ready')));
+    dialog.querySelector('.quick-view-close').focus({preventScroll:true});
   }
 
   function close(){
-    if(!modal||!modal.classList.contains('open'))return;
-    modal.classList.remove('is-ready');
-    modal.setAttribute('aria-hidden','true');
-    document.body.classList.remove('quick-view-open');
-    document.documentElement.classList.remove('quick-view-open');
-    setTimeout(()=>modal?.classList.remove('open'),220);
+    if(!dialog?.open)return;
+    dialog.classList.remove('is-ready');
+    clearTimeout(closeTimer);
+    closeTimer=setTimeout(()=>{if(dialog?.open)dialog.close()},180);
+  }
+
+  function cleanupAfterClose(){
+    dialog?.classList.remove('is-ready');
     const target=returnFocus;returnFocus=null;activeCard=null;
     if(target&&document.contains(target))target.focus({preventScroll:true});
   }
@@ -158,20 +159,13 @@
     if(!card)return;
     if(!button&&e.target.closest('a,button'))return;
     e.preventDefault();
+    e.stopPropagation();
     open(card,button||card.querySelector('.quick-view-open'));
   });
 
   document.addEventListener('keydown',e=>{
-    if(!modal?.classList.contains('open'))return;
-    if(e.key==='Escape'){e.preventDefault();close();return;}
-    if(e.key==='ArrowLeft'){e.preventDefault();setImage(imageIndex-1);return;}
-    if(e.key==='ArrowRight'){e.preventDefault();setImage(imageIndex+1);return;}
-    if(e.key==='Tab'){
-      const focusable=[...modal.querySelectorAll('button:not([hidden]),a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(el=>!el.disabled&&el.offsetParent!==null);
-      if(!focusable.length)return;
-      const first=focusable[0],last=focusable[focusable.length-1];
-      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
-      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
-    }
+    if(!dialog?.open)return;
+    if(e.key==='ArrowLeft'){e.preventDefault();setImage(imageIndex-1)}
+    else if(e.key==='ArrowRight'){e.preventDefault();setImage(imageIndex+1)}
   });
 })();
