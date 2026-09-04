@@ -8,7 +8,10 @@
     "oldPrice": "",
     "tag": "Yeni",
     "description": "%100 mdf şık takım",
-    "image": "/uploads/1786960575318-90877f4a04.jpg",
+    "image": "/uploads/1786960575318-90877f4a04-optimized.webp",
+    "images": [
+      "/uploads/1786960575318-90877f4a04-optimized.webp"
+    ],
     "createdAt": "2026-08-17T09:56:15.327Z"
   }
 ]

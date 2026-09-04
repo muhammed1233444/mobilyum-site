@@ -1,11 +1,26 @@
 const menuBtn=document.querySelector('.menu-btn');
 const mobileNav=document.querySelector('.mobile-nav');
-if(menuBtn&&mobileNav){menuBtn.addEventListener('click',()=>{const open=mobileNav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',String(open));menuBtn.textContent=open?'×':'☰'});mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{mobileNav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');menuBtn.textContent='☰'}));}
+const closeMobileMenu=()=>{if(!menuBtn||!mobileNav)return;mobileNav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');menuBtn.setAttribute('aria-label','Menüyü aç');menuBtn.textContent='☰';};
+if(menuBtn&&mobileNav){menuBtn.addEventListener('click',()=>{const open=mobileNav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',String(open));menuBtn.setAttribute('aria-label',open?'Menüyü kapat':'Menüyü aç');menuBtn.textContent=open?'×':'☰'});mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMobileMenu));document.addEventListener('click',e=>{if(mobileNav.classList.contains('open')&&!mobileNav.contains(e.target)&&!menuBtn.contains(e.target))closeMobileMenu()});}
 const progress=document.querySelector('.progress');
-const updateProgress=()=>{const h=document.documentElement.scrollHeight-innerHeight;if(progress)progress.style.width=(h>0?(scrollY/h)*100:0)+'%'};
-addEventListener('scroll',updateProgress,{passive:true});updateProgress();
-const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});
+let progressFrame=0;
+const updateProgress=()=>{progressFrame=0;const h=document.documentElement.scrollHeight-innerHeight;if(progress)progress.style.transform=`scaleX(${h>0?Math.min(1,scrollY/h):0})`};
+addEventListener('scroll',()=>{if(!progressFrame)progressFrame=requestAnimationFrame(updateProgress)},{passive:true});updateProgress();
+const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.03,rootMargin:'0px 0px 80px 0px'});
 document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
+
+// Görselleri görünmeden yaklaşık iki ekran önce hazırlar; kullanıcı kaydırırken boş alan beklemez.
+const loadImageSource=img=>{
+  if(!img)return;
+  const source=img.dataset.smartSrc||img.dataset.gallerySrc;
+  if(!source)return;
+  img.addEventListener('load',()=>img.classList.add('is-loaded'),{once:true});
+  img.src=source;
+  delete img.dataset.smartSrc;
+  delete img.dataset.gallerySrc;
+};
+const smartImageObserver='IntersectionObserver' in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){loadImageSource(entry.target);smartImageObserver.unobserve(entry.target)}}),{rootMargin:'1400px 0px',threshold:.01}):null;
+const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-src]').forEach(img=>{if(smartImageObserver)smartImageObserver.observe(img);else loadImageSource(img)});
 
 
 // Ana sayfa hero fotoğraf sliderı: masaüstünde oklarla, telefonda parmak hareketiyle çalışır.
@@ -23,17 +38,33 @@ document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
   let startX=0;
   let deltaX=0;
   let dragging=false;
+  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const saveData=navigator.connection?.saveData===true;
+  const loadSlide=slideIndex=>{
+    const slide=slides[(slideIndex+slides.length)%slides.length];
+    const img=slide?.querySelector('img[data-src]');
+    if(!img)return;
+    img.addEventListener('load',()=>img.classList.add('is-loaded'),{once:true});
+    img.src=img.dataset.src;
+    delete img.dataset.src;
+  };
+  const prepareAround=slideIndex=>{
+    loadSlide(slideIndex);
+    loadSlide(slideIndex+1);
+    if(!saveData)loadSlide(slideIndex-1);
+  };
   const renderDots=()=>{
     dots.innerHTML=slides.map((_,i)=>`<button class="hero-slider-dot${i===0?' is-active':''}" type="button" aria-label="${i+1}. fotoğraf"></button>`).join('');
     dots.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{go(i);restart()}));
   };
   const go=(to)=>{
     index=(to+slides.length)%slides.length;
+    prepareAround(index);
     track.style.transform=`translate3d(${-index*100}%,0,0)`;
     slides.forEach((s,i)=>s.classList.toggle('is-active',i===index));
     dots.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('is-active',i===index));
   };
-  const restart=()=>{clearInterval(timer);timer=setInterval(()=>go(index+1),5500)};
+  const restart=()=>{clearInterval(timer);if(!reducedMotion&&!document.hidden)timer=setInterval(()=>go(index+1),5500)};
   prev?.addEventListener('click',()=>{go(index-1);restart()});
   next?.addEventListener('click',()=>{go(index+1);restart()});
   slider.addEventListener('mouseenter',()=>clearInterval(timer));
@@ -42,45 +73,39 @@ document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
   slider.addEventListener('touchmove',e=>{if(!dragging)return;deltaX=e.touches[0].clientX-startX},{passive:true});
   slider.addEventListener('touchend',()=>{if(!dragging)return;dragging=false;if(Math.abs(deltaX)>45)go(index+(deltaX<0?1:-1));restart()});
   slider.addEventListener('touchcancel',()=>{dragging=false;restart()});
+  document.addEventListener('visibilitychange',()=>document.hidden?clearInterval(timer):restart());
   renderDots();
+  prepareAround(0);
+  if(!saveData){
+    const warmSlider=()=>{loadSlide(2);loadSlide(3)};
+    if('requestIdleCallback' in window)requestIdleCallback(warmSlider,{timeout:1800});else setTimeout(warmSlider,900);
+  }
   restart();
 })();
 
 // Lightbox: delegated so products copied into category pages are also clickable.
-const openLightbox=(img)=>{if(!img)return;const layer=document.createElement('div');layer.className='lightbox';layer.innerHTML='<button aria-label="Kapat">×</button><img src="'+img.currentSrc+'" alt="'+(img.alt||'')+'">';document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');setTimeout(()=>layer.remove(),220)};layer.addEventListener('click',e=>{if(e.target===layer||e.target.tagName==='BUTTON')close()});};
+const openLightbox=(img)=>{if(!img)return;const src=img.currentSrc||img.src||img.dataset.smartSrc||img.dataset.gallerySrc;if(!src)return;const layer=document.createElement('div');layer.className='lightbox';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-label','Ürün fotoğrafı');layer.innerHTML='<button type="button" aria-label="Fotoğrafı kapat">×</button><img src="'+src+'" alt="'+(img.alt||'')+'">';document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');setTimeout(()=>layer.remove(),220)};layer.addEventListener('click',e=>{if(e.target===layer||e.target.tagName==='BUTTON')close()});};
 document.addEventListener('click',e=>{const img=e.target.closest('.product-image img,.hero-image img,.campaign-image img,.store-showcase>img');if(img)openLightbox(img)});
-const style=document.createElement('style');style.textContent='.lightbox{position:fixed;inset:0;background:rgba(25,21,17,.88);backdrop-filter:blur(10px);z-index:400;display:flex;align-items:center;justify-content:center;padding:5vw;opacity:0;transition:.22s}.lightbox.show{opacity:1}.lightbox img{max-width:92vw;max-height:88vh;width:auto;height:auto;object-fit:contain;box-shadow:0 25px 80px rgba(0,0,0,.35)}.lightbox button{position:absolute;right:25px;top:18px;background:none;border:0;color:white;font-size:36px;cursor:pointer}';document.head.appendChild(style);
 
 // Wedding package modal
 const modal=document.querySelector('.package-modal');
 const closeModal=()=>{if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';};
-document.querySelectorAll('.package-open').forEach(b=>b.addEventListener('click',()=>{modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden'}));
+document.querySelectorAll('.package-open').forEach(b=>b.addEventListener('click',()=>{modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modal.querySelector('.modal-close')?.focus()}));
 document.querySelector('.modal-close')?.addEventListener('click',closeModal);document.querySelector('.package-modal-backdrop')?.addEventListener('click',closeModal);
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeCategory();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMobileMenu();closeModal();closeCategory();}});
 
-// Mouse-following point — lightweight, desktop-only
+// Fareyi takip eden premium nokta: yalnızca gerçek masaüstü işaretçilerinde çalışır.
 const dot=document.querySelector('.cursor-dot');
-let mouseX=0, mouseY=0, rafPending=false;
-const moveDot=()=>{
-  rafPending=false;
-  if(!dot)return;
-  dot.style.left=mouseX+'px';
-  dot.style.top=mouseY+'px';
-};
-window.addEventListener('pointermove',e=>{
-  if(e.pointerType==='touch')return;
-  mouseX=e.clientX; mouseY=e.clientY;
-  if(!rafPending){rafPending=true;requestAnimationFrame(moveDot);}
-},{passive:true});
-document.addEventListener('pointerover',e=>{
-  const el=e.target.closest?.('a,button');
-  if(el&&dot){dot.style.width='17px';dot.style.height='17px';dot.style.boxShadow='0 0 0 2px rgba(255,255,255,.95),0 0 0 8px rgba(200,169,130,.18),0 0 28px rgba(200,169,130,.65)';}
-});
-document.addEventListener('pointerout',e=>{
-  const el=e.target.closest?.('a,button');
-  if(el&&dot){dot.style.width='11px';dot.style.height='11px';dot.style.boxShadow='0 0 0 2px rgba(255,255,255,.9),0 0 0 7px rgba(200,169,130,.16),0 0 24px rgba(200,169,130,.55)';}
-});
+const finePointer=matchMedia('(hover:hover) and (pointer:fine)');
+if(dot&&finePointer.matches){
+  let mouseX=0,mouseY=0,rafPending=false;
+  const moveDot=()=>{rafPending=false;dot.style.transform=`translate3d(${mouseX}px,${mouseY}px,0) translate(-50%,-50%)`};
+  window.addEventListener('pointermove',e=>{mouseX=e.clientX;mouseY=e.clientY;dot.classList.add('is-visible');if(!rafPending){rafPending=true;requestAnimationFrame(moveDot)}},{passive:true});
+  document.addEventListener('pointerover',e=>{if(e.target.closest?.('a,button'))dot.classList.add('is-hovering')});
+  document.addEventListener('pointerout',e=>{if(e.target.closest?.('a,button'))dot.classList.remove('is-hovering')});
+  document.addEventListener('mouseleave',()=>dot.classList.remove('is-visible'));
+}
 
 // Dedicated category views — ürünler yalnızca admin panelinden gelir.
 const categoryPage=document.getElementById('category-page');
@@ -102,7 +127,7 @@ const whatsapp='905446504459';
 
 function galleryHtml(p){
   const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
-  const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" data-index="${i}" loading="lazy">`).join('');
+  const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" ${i===0?'data-smart-src':'data-gallery-src'}="${escapeHtml(src)}" alt="${escapeHtml(p.name)}${i?` · ${i+1}. fotoğraf`:''}" data-index="${i}" decoding="async">`).join('');
   const controls=imgs.length>1?`
     <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
     <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
@@ -115,7 +140,7 @@ function productCardHtml(p){
     <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h4>${escapeHtml(p.name)}</h4>
     <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
     ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
-    <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank">WhatsApp'tan bilgi al ↗</a></div>
+    <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a></div>
   </article>`;
 }
 function renderManagedProducts(){
@@ -132,6 +157,15 @@ function renderManagedProducts(){
     group.innerHTML=`<div class="group-title"><span>${String(i+1).padStart(2,'0')}</span><h3>${escapeHtml(category)}</h3><em>${list.length} model</em></div><div class="product-grid"></div>`;
     group.querySelector('.product-grid').innerHTML=list.map(productCardHtml).join('');
     managedContainer.appendChild(group);
+    observeSmartImages(group);
+  });
+}
+function warmCategoryCovers(){
+  if(navigator.connection?.saveData===true||/2g/.test(navigator.connection?.effectiveType||''))return;
+  ['Yatak Odaları','Oturma Grupları','Yemek Odaları','Genç Odaları'].forEach(category=>{
+    const product=managedProducts.find(item=>item.category===category);
+    const src=(Array.isArray(product?.images)&&product.images[0])||product?.image;
+    if(src){const img=new Image();img.decoding='async';img.src=src;}
   });
 }
 function renderCategory(k){
@@ -141,6 +175,7 @@ function renderCategory(k){
   desc.textContent=d.desc;
   const list=managedProducts.filter(p=>p.category===d.name);
   categoryProducts.innerHTML=list.length?list.map(productCardHtml).join(''):'<div class="empty-products"><div><span>ŞU ANDA ÜRÜN YOK</span><h4>Yakında burada.</h4><p>Bu kategorideki ürünler mağaza yönetim panelinden eklenecek.</p></div></div>';
+  observeSmartImages(categoryProducts);
 }
 async function openCategory(k, push=true){
   const d=categoryData[k]; if(!d)return;
@@ -148,7 +183,7 @@ async function openCategory(k, push=true){
   renderCategory(k);
   categoryPage.classList.add('open');categoryPage.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
   if(push)history.pushState({category:k},'', '#kategori/'+k);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>categoryPage.classList.add('page-ready')));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{categoryPage.classList.add('page-ready');categoryPage.querySelector('.category-page-close')?.focus()}));
 }
 function closeCategory(){if(!categoryPage)return;categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/'))history.pushState({},'',location.pathname+location.search);}
 document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();openCategory(x.dataset.category)}));
@@ -163,6 +198,7 @@ managedProductsReady=(async()=>{
     const data=await res.json();
     managedProducts=Array.isArray(data)?data:[];
     renderManagedProducts();
+    if('requestIdleCallback' in window)requestIdleCallback(warmCategoryCovers,{timeout:2200});else setTimeout(warmCategoryCovers,1200);
     if(location.hash.startsWith('#kategori/')) openCategory(location.hash.split('/')[1],false);
   }catch(e){console.warn('Yönetim ürünleri yüklenemedi.',e);managedProducts=[];renderManagedProducts();}
   return managedProducts;
@@ -174,6 +210,8 @@ managedProductsReady=(async()=>{
     const imgs=[...gallery.querySelectorAll('.managed-gallery-img')];
     if(!imgs.length)return;
     index=(index+imgs.length)%imgs.length;
+    loadImageSource(imgs[index]);
+    if(navigator.connection?.saveData!==true)loadImageSource(imgs[(index+1)%imgs.length]);
     imgs.forEach((img,i)=>img.classList.toggle('active',i===index));
     gallery.querySelectorAll('.managed-gallery-dot').forEach((dot,i)=>dot.classList.toggle('active',i===index));
     gallery.dataset.galleryIndex=index;
