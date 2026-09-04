@@ -32,6 +32,25 @@ $("#loginBtn").onclick=async()=>{
 $("#logoutBtn").onclick=()=>{sessionStorage.removeItem("mobilyum_admin_password");location.reload()};
 $("#refreshBtn").onclick=loadProducts;
 $("#analyticsRefreshBtn").onclick=loadAnalytics;
+$("#exportDataBtn").onclick=async()=>{
+  const msg=$("#exportMsg");
+  msg.textContent="Yedek hazırlanıyor...";
+  try{
+    const r=await fetch("/api/admin/export",{headers:{"x-admin-password":adminPassword},cache:"no-store"});
+    if(!r.ok){const data=await r.json().catch(()=>({}));throw new Error(data.error||`Sunucu hatası (${r.status}).`)}
+    const blob=await r.blob();
+    const disposition=r.headers.get("content-disposition")||"";
+    const name=disposition.match(/filename="([^"]+)"/)?.[1]||"mobilyum-veri-yedegi.json";
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download=name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(link.href),1000);
+    msg.textContent="Ürün ve analiz yedeği indirildi.";
+  }catch(error){msg.textContent=error.message||"Yedek indirilemedi."}
+};
 
 $("#imageInput").onchange=e=>{
   const box=$("#imagePreview");

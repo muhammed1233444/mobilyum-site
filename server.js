@@ -17,7 +17,7 @@ const ROOT = __dirname;
 const ASSET_DIR = path.join(ROOT, "assets");
 const BUNDLED_UPLOAD_DIR = path.join(ROOT, "uploads");
 const BUNDLED_DATA_FILE = path.join(ROOT, "data", "products.json");
-const STORAGE_DIR = path.join(ROOT, "storage");
+const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || path.join(ROOT, "storage"));
 const DATA_DIR = path.join(STORAGE_DIR, "data");
 const UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
 const DATA_FILE = path.join(DATA_DIR, "products.json");
@@ -43,6 +43,7 @@ app.set("trust proxy", 1);
 app.use(compression({ threshold: 1024 }));
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   if (process.env.NODE_ENV === "production" && req.secure) {
@@ -63,6 +64,7 @@ const sendPublicFile = (fileName, cacheControl = "no-cache") => (_, res) => {
 app.get(["/", "/index.html"], sendPublicFile("index.html"));
 app.get("/style.css", sendPublicFile("style.css", "public, max-age=604800"));
 app.get("/script.js", sendPublicFile("script.js", "public, max-age=604800"));
+app.get("/quick-view.js", sendPublicFile("quick-view.js", "public, max-age=604800"));
 app.get("/consent.js", sendPublicFile("consent.js", "public, max-age=604800"));
 app.get("/favicon.ico", sendPublicFile("favicon.ico", "public, max-age=604800"));
 app.get("/favicon.png", (_, res) => {
@@ -76,6 +78,15 @@ app.get("/site-config.js", (_, res) => {
 app.get("/site.webmanifest", sendPublicFile("site.webmanifest", "public, max-age=86400"));
 app.get("/robots.txt", sendPublicFile("robots.txt", "public, max-age=3600"));
 app.get("/sitemap.xml", sendPublicFile("sitemap.xml", "public, max-age=3600"));
+app.get("/health", (_, res) => {
+  try {
+    fs.accessSync(DATA_DIR, fs.constants.R_OK | fs.constants.W_OK);
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ status: "ok", storage: "ready" });
+  } catch {
+    res.status(503).json({ status: "error", storage: "unavailable" });
+  }
+});
 
 function readProducts() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); }
@@ -194,8 +205,8 @@ const SEO_PAGES = {
     heroImage: "/assets/optimized/store.webp",
     imageAlt: "Mobilyum Çorlu mobilya mağazası",
     contentTitle: "Mağaza bilgileri",
-    paragraphs: ["Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53, 59850 Çorlu / Tekirdağ", "Telefon ve WhatsApp: 0544 650 44 59"],
-    bullets: ["WhatsApp üzerinden hızlı bilgi", "Telefonla doğrudan iletişim", "Google Haritalar ile yol tarifi"]
+    paragraphs: ["Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53, 59850 Çorlu / Tekirdağ", "Telefon ve WhatsApp: 0544 650 44 59", "Pazartesi–Cumartesi 09.00–20.00, Pazar 12.00–19.00 saatleri arasında açığız."],
+    bullets: ["WhatsApp üzerinden hızlı bilgi", "Pazartesi–Cumartesi 09.00–20.00", "Pazar 12.00–19.00", "Google Haritalar ile yol tarifi"]
   },
   "/cerez-politikasi": {
     title: "Çerez Politikası | Mobilyum Çorlu",
@@ -240,7 +251,9 @@ function renderSeoProducts(category) {
     const price = escapeHtml(product.price || "Fiyat için bilgi alın");
     const image = escapeHtml(safeProductImage(product));
     const message = encodeURIComponent(`Merhaba Mobilyum, ${product.name || "bu ürün"} hakkında bilgi almak istiyorum.`);
-    return `<article class="product-card seo-product-card" id="model-${index + 1}"><div class="product-image"><img src="${image}" loading="lazy" decoding="async" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2>${name}</h2><span>${price}</span><small class="managed-desc">${description}</small><a class="product-btn" href="https://wa.me/905446504459?text=${message}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a></div></article>`;
+    const images = (Array.isArray(product.images) && product.images.length ? product.images : [product.image]).filter(Boolean);
+    const quickData = `data-quick-view="1" data-qv-name="${name}" data-qv-category="${escapeHtml(category)}" data-qv-type="${escapeHtml(product.type || category)}" data-qv-price="${price}" data-qv-old-price="${escapeHtml(product.oldPrice || "")}" data-qv-tag="${escapeHtml(product.tag || "")}" data-qv-description="${description}" data-qv-images="${escapeHtml(JSON.stringify(images))}"`;
+    return `<article class="product-card seo-product-card" id="model-${index + 1}" ${quickData}><div class="product-image"><img src="${image}" loading="lazy" decoding="async" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2>${name}</h2><span>${price}</span><small class="managed-desc">${description}</small><div class="product-card-actions"><a class="product-btn" href="https://wa.me/905446504459?text=${message}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a><button class="quick-view-open" type="button" aria-label="${name} ürününü hızlı incele">Hızlı incele <span aria-hidden="true">↗</span></button></div></div></article>`;
   }).join("");
   return {
     products,
@@ -282,7 +295,7 @@ function renderSeoPage(req, res) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "FurnitureStore", "@id": "https://mobilyumcorlu.com/#store", name: "Mobilyum Çorlu", url: "https://mobilyumcorlu.com/", telephone: "+90 544 650 44 59", logo: { "@type": "ImageObject", url: "https://mobilyumcorlu.com/favicon.png", width: 512, height: 512 }, address: { "@type": "PostalAddress", streetAddress: "Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53", addressLocality: "Çorlu", addressRegion: "Tekirdağ", postalCode: "59850", addressCountry: "TR" } },
+      { "@type": "FurnitureStore", "@id": "https://mobilyumcorlu.com/#store", name: "Mobilyum Çorlu", url: "https://mobilyumcorlu.com/", telephone: "+90 544 650 44 59", logo: { "@type": "ImageObject", url: "https://mobilyumcorlu.com/favicon.png", width: 512, height: 512 }, address: { "@type": "PostalAddress", streetAddress: "Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53", addressLocality: "Çorlu", addressRegion: "Tekirdağ", postalCode: "59850", addressCountry: "TR" }, openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "09:00", closes: "20:00" }, { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "12:00", closes: "19:00" }] },
       { "@type": page.category ? "CollectionPage" : "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: "tr-TR", about: { "@id": "https://mobilyumcorlu.com/#store" }, primaryImageOfPage: { "@type": "ImageObject", url: `https://mobilyumcorlu.com${page.heroImage}` } },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://mobilyumcorlu.com/" }, { "@type": "ListItem", position: 2, name: page.breadcrumb, item: canonical }] }
     ]
@@ -301,11 +314,33 @@ function renderSeoPage(req, res) {
   res.send(html);
 }
 
+const adminAuthAttempts = new Map();
+function securePasswordMatch(supplied, expected) {
+  const suppliedHash = crypto.createHash("sha256").update(String(supplied)).digest();
+  const expectedHash = crypto.createHash("sha256").update(String(expected)).digest();
+  return crypto.timingSafeEqual(suppliedHash, expectedHash);
+}
+
 function auth(req, res, next) {
   if (!ADMIN_PASSWORD) return res.status(500).json({ error: "ADMIN_PASSWORD ayarlanmamış." });
   const supplied = req.headers["x-admin-password"] || "";
-  if (supplied !== ADMIN_PASSWORD) return res.status(401).json({ error: "Şifre yanlış." });
-  next();
+  const key = req.ip || "unknown";
+  const now = Date.now();
+  const windowMs = 10 * 60 * 1000;
+  let attempt = adminAuthAttempts.get(key);
+  if (!attempt || now - attempt.startedAt > windowMs) attempt = { startedAt: now, count: 0 };
+  if (securePasswordMatch(supplied, ADMIN_PASSWORD)) {
+    adminAuthAttempts.delete(key);
+    res.setHeader("Cache-Control", "no-store");
+    return next();
+  }
+  attempt.count += 1;
+  adminAuthAttempts.set(key, attempt);
+  if (attempt.count >= 8) {
+    res.setHeader("Retry-After", String(Math.ceil((windowMs - (now - attempt.startedAt)) / 1000)));
+    return res.status(429).json({ error: "Çok fazla hatalı giriş denemesi. Birkaç dakika sonra tekrar dene." });
+  }
+  return res.status(401).json({ error: "Şifre yanlış." });
 }
 
 function readAnalytics() {
@@ -425,6 +460,11 @@ app.post("/api/analytics/event", (req, res) => {
 app.get("/api/products", (_, res) => { res.setHeader("Cache-Control", "no-store"); res.json(readProducts()); });
 app.get("/api/admin/check", auth, (_, res) => res.json({ ok: true }));
 app.get("/api/admin/analytics", auth, (_, res) => { res.setHeader("Cache-Control", "no-store"); res.json(readAnalytics()); });
+app.get("/api/admin/export", auth, (_, res) => {
+  const day = istanbulDay();
+  res.setHeader("Content-Disposition", `attachment; filename="mobilyum-veri-yedegi-${day}.json"`);
+  res.json({ version: 1, exportedAt: new Date().toISOString(), products: readProducts(), analytics: readAnalytics() });
+});
 
 app.post("/api/products", auth, upload.array("images", 12), async (req, res) => {
   let files = req.files || [];
@@ -515,7 +555,11 @@ app.put("/api/products/:id", auth, upload.array("images", 12), async (req, res) 
   }
 });
 
-app.get(["/admin", "/admin.html"], sendPublicFile("admin.html", "no-store"));
+app.get(["/admin", "/admin.html"], (_, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
+  res.sendFile(path.join(ROOT, "admin.html"));
+});
 app.get("/admin.css", sendPublicFile("admin.css", "no-store"));
 app.get("/admin.js", sendPublicFile("admin.js", "no-store"));
 
@@ -524,4 +568,4 @@ app.use((err, req, res, next) => {
   res.status(400).json({ error: err.message || "Bir hata oluştu." });
 });
 
-app.listen(PORT, () => console.log(`Mobilyum sitesi: http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Mobilyum sitesi: http://localhost:${PORT} · depolama: ${STORAGE_DIR}`));

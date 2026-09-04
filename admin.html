@@ -2,6 +2,7 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="stylesheet" href="admin.css">
@@ -13,7 +14,7 @@
   <section id="login" class="card">
     <h2>Yönetim paneli</h2>
     <p>Bu alan sadece mağaza yönetimi içindir.</p>
-    <div class="row"><input id="password" type="password" placeholder="Yönetici şifresi"><button id="loginBtn">Giriş yap</button></div>
+    <div class="row"><input id="password" type="password" placeholder="Yönetici şifresi" aria-label="Yönetici şifresi" autocomplete="current-password"><button id="loginBtn" type="button">Giriş yap</button></div>
     <div id="loginMsg" class="msg"></div>
   </section>
 
@@ -69,6 +70,12 @@
       </div>
       <div><h3>Son günler</h3><div id="analyticsDays" class="analytics-days"></div></div>
       <div id="analyticsMsg" class="msg"></div>
+    </section>
+
+    <section class="card system-card">
+      <div class="card-head"><div><h2>Yedek ve sistem</h2><p>Ürün ve analiz bilgilerini bilgisayarına indir. Fotoğraflar Railway Volume yedeklerinde korunur.</p></div><button id="exportDataBtn" class="ghost" type="button">Verileri indir</button></div>
+      <div class="system-notes"><span>✓ Railway sağlık kontrolü hazır</span><span>✓ Yönetici giriş deneme sınırı etkin</span><span>✓ Ürün fotoğrafları otomatik optimize edilir</span></div>
+      <div id="exportMsg" class="msg"></div>
     </section>
   </main>
 </div>

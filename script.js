@@ -9,6 +9,33 @@ addEventListener('scroll',()=>{if(!progressFrame)progressFrame=requestAnimationF
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.03,rootMargin:'0px 0px 80px 0px'});
 document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
 
+// Mağaza durumunu Türkiye saatine göre gösterir.
+(function initStoreStatus(){
+  const statusNodes=[...document.querySelectorAll('[data-store-status]')];
+  const dots=[...document.querySelectorAll('[data-store-status-dot]')];
+  if(!statusNodes.length)return;
+  const dayNames={Sun:'Pazar',Mon:'Pazartesi',Tue:'Salı',Wed:'Çarşamba',Thu:'Perşembe',Fri:'Cuma',Sat:'Cumartesi'};
+  const update=()=>{
+    const parts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{timeZone:'Europe/Istanbul',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
+    const day=parts.weekday;
+    const minutes=Number(parts.hour)*60+Number(parts.minute);
+    const sunday=day==='Sun';
+    const opens=sunday?12*60:9*60;
+    const closes=sunday?19*60:20*60;
+    const open=minutes>=opens&&minutes<closes;
+    let status='';
+    if(open)status=`Şu an açık · ${sunday?'19.00':'20.00'}’ye kadar`;
+    else if(minutes<opens)status=`Bugün ${sunday?'12.00':'09.00'}’da açılıyor`;
+    else if(day==='Sat')status='Kapalı · Pazar 12.00’de açılıyor';
+    else if(day==='Sun')status='Kapalı · Pazartesi 09.00’da açılıyor';
+    else status='Kapalı · Yarın 09.00’da açılıyor';
+    statusNodes.forEach(node=>{node.textContent=status;node.dataset.open=String(open);node.title=`${dayNames[day]} çalışma durumu`;});
+    dots.forEach(dot=>dot.classList.toggle('is-open',open));
+  };
+  update();
+  setInterval(update,60000);
+})();
+
 // Görselleri görünmeden yaklaşık iki ekran önce hazırlar; kullanıcı kaydırırken boş alan beklemez.
 const loadImageSource=img=>{
   if(!img)return;
@@ -85,7 +112,7 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
 
 // Lightbox: delegated so products copied into category pages are also clickable.
 const openLightbox=(img)=>{if(!img)return;const src=img.currentSrc||img.src||img.dataset.smartSrc||img.dataset.gallerySrc;if(!src)return;const layer=document.createElement('div');layer.className='lightbox';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-label','Ürün fotoğrafı');layer.innerHTML='<button type="button" aria-label="Fotoğrafı kapat">×</button><img src="'+src+'" alt="'+(img.alt||'')+'">';document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');setTimeout(()=>layer.remove(),220)};layer.addEventListener('click',e=>{if(e.target===layer||e.target.tagName==='BUTTON')close()});};
-document.addEventListener('click',e=>{const img=e.target.closest('.product-image img,.hero-image img,.campaign-image img,.store-showcase>img');if(img)openLightbox(img)});
+document.addEventListener('click',e=>{const img=e.target.closest('.hero-image img,.campaign-image img,.store-showcase>img');if(img)openLightbox(img)});
 
 // Wedding package modal
 const modal=document.querySelector('.package-modal');
@@ -135,12 +162,14 @@ function galleryHtml(p){
   return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escapeHtml(p.tag)}</span>`:''}${controls}</div>`;
 }
 function productCardHtml(p){
-  return `<article class="product-card managed-product">
+  const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
+  const quickData=`data-quick-view="1" data-qv-name="${escapeHtml(p.name)}" data-qv-category="${escapeHtml(p.category||'Mobilyum')}" data-qv-type="${escapeHtml(p.type||'Mobilya')}" data-qv-price="${escapeHtml(p.price||'Fiyat için bilgi alın')}" data-qv-old-price="${escapeHtml(p.oldPrice||'')}" data-qv-tag="${escapeHtml(p.tag||'')}" data-qv-description="${escapeHtml(p.description||'')}" data-qv-images="${escapeHtml(JSON.stringify(imgs))}"`;
+  return `<article class="product-card managed-product" ${quickData}>
     ${galleryHtml(p)}
     <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h4>${escapeHtml(p.name)}</h4>
     <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
     ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
-    <a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a></div>
+    <div class="product-card-actions"><a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a><button class="quick-view-open" type="button" aria-label="${escapeHtml(p.name)} ürününü hızlı incele">Hızlı incele <span aria-hidden="true">↗</span></button></div></div>
   </article>`;
 }
 function renderManagedProducts(){

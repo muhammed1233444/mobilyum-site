@@ -51,3 +51,19 @@ V9.1 TASARIM KORUMA DÜZELTMESİ
 - Yönetim paneli yeniden ürün ekleme alanıyla başlar; analiz kartı en alta
   taşınmıştır.
 - Gerçek kategori adresleri yalnızca SEO ve yeni sekmede açma için korunmuştur.
+
+FINAL V10 SON DOKUNUŞLAR
+------------------------
+- Tedarikçi ve toptancı bilgilerini korumak için katalog sistemi eklenmemiştir.
+- İletişim alanına çalışma saatleri eklenmiştir: Pazartesi-Cumartesi
+  09.00-20.00, Pazar 12.00-19.00.
+- Ana sayfada Türkiye saatine göre hafif ve otomatik "Şu an açık / kapalı"
+  bilgisi gösterilir.
+- Çalışma saatleri Google yerel işletme yapılandırılmış verisine eklenmiştir.
+- Yönetici şifresinde hatalı giriş deneme sınırı ve güvenli karşılaştırma vardır.
+- /health adresi Railway sağlık kontrolü için hazırdır.
+- Yönetim paneline ürün ve analiz verilerini indirme düğmesi eklenmiştir.
+- Depolama konumu STORAGE_DIR değişkeniyle ayarlanabilir; bağlı Railway Volume
+  kullanılmaya devam edilmelidir.
+- Mevcut tasarım, duman, imleç, kategori pencereleri ve çoklu fotoğraf galerileri
+  değiştirilmemiştir.
