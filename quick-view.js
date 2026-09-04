@@ -89,9 +89,11 @@
     imageIndex=(next+images.length)%images.length;
     const main=modal.querySelector('.quick-view-main-image');
     main.classList.remove('is-ready');
-    main.src=images[imageIndex];
     main.alt=`${activeCard?.dataset.qvName||'Mobilyum ürünü'} · ${imageIndex+1}. fotoğraf`;
     main.onload=()=>main.classList.add('is-ready');
+    main.onerror=()=>main.classList.add('is-ready');
+    main.src=images[imageIndex];
+    if(main.complete)main.classList.add('is-ready');
     modal.querySelector('.quick-view-count').textContent=images.length>1?`${imageIndex+1} / ${images.length}`:'';
     modal.querySelectorAll('.quick-view-thumb').forEach((b,i)=>b.classList.toggle('is-active',i===imageIndex));
     const multi=images.length>1;
@@ -134,6 +136,7 @@
     modal.classList.add('open');
     modal.setAttribute('aria-hidden','false');
     document.body.classList.add('quick-view-open');
+    document.documentElement.classList.add('quick-view-open');
     requestAnimationFrame(()=>modal.classList.add('is-ready'));
     modal.querySelector('.quick-view-close').focus();
   }
@@ -143,6 +146,7 @@
     modal.classList.remove('is-ready');
     modal.setAttribute('aria-hidden','true');
     document.body.classList.remove('quick-view-open');
+    document.documentElement.classList.remove('quick-view-open');
     setTimeout(()=>modal?.classList.remove('open'),220);
     const target=returnFocus;returnFocus=null;activeCard=null;
     if(target&&document.contains(target))target.focus({preventScroll:true});
