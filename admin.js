@@ -21,16 +21,17 @@ async function api(url, options={}) {
 }
 async function check(){
   if(!adminPassword) return;
-  try { await api("/api/admin/check"); login.hidden=true; panel.hidden=false; load(); }
+  try { await api("/api/admin/check"); login.hidden=true; panel.hidden=false; loadAll(); }
   catch { sessionStorage.removeItem("mobilyum_admin_password"); adminPassword=""; }
 }
 $("#loginBtn").onclick=async()=>{
   adminPassword=$("#password").value;
-  try { await api("/api/admin/check"); sessionStorage.setItem("mobilyum_admin_password",adminPassword); login.hidden=true; panel.hidden=false; load(); }
+  try { await api("/api/admin/check"); sessionStorage.setItem("mobilyum_admin_password",adminPassword); login.hidden=true; panel.hidden=false; loadAll(); }
   catch(e){ loginMsg.textContent=e.message; adminPassword=""; }
 };
 $("#logoutBtn").onclick=()=>{sessionStorage.removeItem("mobilyum_admin_password");location.reload()};
-$("#refreshBtn").onclick=load;
+$("#refreshBtn").onclick=loadProducts;
+$("#analyticsRefreshBtn").onclick=loadAnalytics;
 
 $("#imageInput").onchange=e=>{
   const box=$("#imagePreview");
@@ -87,10 +88,10 @@ $("#productForm").onsubmit=async e=>{
     e.target.reset();
     document.querySelector("#imagePreview").innerHTML="";
     msg.textContent=`Ürün başarıyla eklendi (${Array.isArray(saved.images)?saved.images.length:1} fotoğraf).`;
-    await load();
+    await loadProducts();
   }catch(err){msg.textContent=err.message||"Ürün kaydedilemedi."}
 };
-async function load(){
+async function loadProducts(){
   const items=await api("/api/products");
   const box=$("#products");
   if(!items.length){box.innerHTML="<p>Henüz yönetim panelinden ürün eklenmedi.</p>";return}
@@ -104,8 +105,47 @@ async function load(){
   }).join("");
   box.querySelectorAll(".delete").forEach(b=>b.onclick=async()=>{
     if(!confirm("Bu ürünü silmek istediğine emin misin?"))return;
-    try{await api("/api/products/"+b.dataset.id,{method:"DELETE"});load()}catch(e){alert(e.message)}
+    try{await api("/api/products/"+b.dataset.id,{method:"DELETE"});loadProducts()}catch(e){alert(e.message)}
   });
 }
-function escapeHtml(s=""){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+
+const formatNumber=value=>new Intl.NumberFormat("tr-TR").format(Number(value||0));
+const pageNames={
+  "/":"Ana sayfa","/yatak-odasi":"Yatak Odası","/koltuk-takimlari":"Koltuk Takımları","/yemek-odasi":"Yemek Odası","/genc-odasi":"Genç Odası","/dugun-paketi":"Düğün Paketi","/hakkimizda":"Hakkımızda","/iletisim":"İletişim"
+};
+
+function renderCountList(target, entries, emptyText){
+  const box=$(target);
+  if(!entries.length){box.innerHTML=`<p>${escapeHtml(emptyText)}</p>`;return}
+  const max=Math.max(...entries.map(([,value])=>Number(value||0)),1);
+  box.innerHTML=entries.slice(0,8).map(([name,value])=>`<div class="analytics-row"><span>${escapeHtml(name)}</span><i><b style="width:${Math.max(4,Math.round(Number(value||0)/max*100))}%"></b></i><strong>${formatNumber(value)}</strong></div>`).join("");
+}
+
+async function loadAnalytics(){
+  const msg=$("#analyticsMsg");
+  msg.textContent="İstatistikler yükleniyor...";
+  try{
+    const data=await api("/api/admin/analytics");
+    $("#statVisits").textContent=formatNumber(data.totals?.visits);
+    $("#statPageViews").textContent=formatNumber(data.totals?.pageViews);
+    $("#statWhatsapp").textContent=formatNumber(data.totals?.whatsappClicks);
+    $("#statPhone").textContent=formatNumber(data.totals?.phoneClicks);
+    $("#statDirections").textContent=formatNumber(data.totals?.directionsClicks);
+    const pages=Object.entries(data.pages||{}).map(([name,value])=>[pageNames[name]||name,value]).sort((a,b)=>b[1]-a[1]);
+    const referrers=Object.entries(data.referrers||{}).sort((a,b)=>b[1]-a[1]);
+    const devices=[["Mobil",data.devices?.mobile||0],["Masaüstü",data.devices?.desktop||0]].sort((a,b)=>b[1]-a[1]);
+    renderCountList("#analyticsPages",pages,"Henüz sayfa görüntüleme verisi yok.");
+    renderCountList("#analyticsReferrers",referrers,"Henüz ziyaret kaynağı verisi yok.");
+    renderCountList("#analyticsDevices",devices,"Henüz cihaz verisi yok.");
+    const days=Object.entries(data.byDay||{}).sort(([a],[b])=>b.localeCompare(a)).slice(0,14);
+    $("#analyticsDays").innerHTML=days.length?`<table><thead><tr><th>Tarih</th><th>Ziyaret</th><th>Sayfa</th><th>WhatsApp</th><th>Telefon</th></tr></thead><tbody>${days.map(([day,values])=>`<tr><td>${escapeHtml(day)}</td><td>${formatNumber(values.visits)}</td><td>${formatNumber(values.pageViews)}</td><td>${formatNumber(values.whatsappClicks)}</td><td>${formatNumber(values.phoneClicks)}</td></tr>`).join("")}</tbody></table>`:"<p>İlk analiz verileri ziyaretçiler onay verdikten sonra burada görünecek.</p>";
+    msg.textContent=data.updatedAt?`Son veri: ${new Date(data.updatedAt).toLocaleString("tr-TR")}`:"Henüz analiz verisi yok.";
+  }catch(error){msg.textContent=error.message||"Analiz verileri alınamadı."}
+}
+
+function loadAll(){
+  Promise.allSettled([loadProducts(),loadAnalytics()]);
+}
+
+function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 check();

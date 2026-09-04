@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "totals": {
+    "visits": 0,
+    "pageViews": 0,
+    "whatsappClicks": 0,
+    "phoneClicks": 0,
+    "directionsClicks": 0,
+    "categoryClicks": 0
+  },
+  "byDay": {},
+  "devices": {
+    "mobile": 0,
+    "desktop": 0
+  },
+  "pages": {},
+  "referrers": {},
+  "updatedAt": null
+}

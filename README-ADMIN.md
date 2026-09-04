@@ -17,3 +17,9 @@ Admin paneline şifrenle gir. Ürün adı, kategori, fiyat ve fotoğrafı doldur
 Bu sürüm gerçek bir sunucu/backend ile çalışacak şekilde hazırlandı. Sadece `index.html` dosyasını Vercel'e yüklemek yeterli değildir; Node.js sunucusunun ve `data/` ile `uploads/` klasörlerinin kalıcı depolamada çalışması gerekir. Hosting'e geçerken `ADMIN_PASSWORD` ortam değişkenini sunucuda tanımla.
 
 Mevcut tasarım ve ürünler korunmuştur.
+
+## Ziyaretçi analizi
+
+Yönetim panelinin üst kısmında, analiz izni veren ziyaretçilere ait toplu istatistikler bulunur. Yaklaşık ziyaret, sayfa görüntüleme, cihaz, ziyaret kaynağı, WhatsApp, telefon ve yol tarifi tıklamalarını buradan görebilirsin. İsim, telefon numarası veya mesaj içeriği kaydedilmez.
+
+İstersen aynı verileri Google Analytics 4'te de görebilirsin. Railway değişkenlerine `GA_MEASUREMENT_ID` adıyla Google Analytics'teki `G-...` kodunu ekle. Kod eklenmemiş olsa bile yönetim panelindeki kendi analiz ekranı çalışır.

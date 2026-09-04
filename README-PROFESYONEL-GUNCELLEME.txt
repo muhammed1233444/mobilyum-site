@@ -28,3 +28,16 @@ yüklemeyin.
 Google favicon değişikliği yayınlandıktan hemen sonra görünmeyebilir. Google
 Search Console URL Denetimi bölümünden ana sayfa için yeniden dizine ekleme
 isteği gönderilebilir.
+
+V9 SEO VE ANALİZ GÜNCELLEMESİ
+-----------------------------
+- /yatak-odasi, /koltuk-takimlari, /yemek-odasi, /genc-odasi,
+  /dugun-paketi, /hakkimizda ve /iletisim gerçek ve taranabilir sayfalardır.
+- Bu sayfalar sitemap.xml dosyasına eklendi ve ana sayfadan doğrudan bağlandı.
+- Çerez/analiz tercih ekranı eklendi. Analiz izni verilmeden takip yapılmaz.
+- Yönetim paneline anonim ziyaret, sayfa, cihaz, kaynak ve iletişim tıklaması
+  istatistikleri eklendi.
+- Google Analytics 4 isteğe bağlıdır. Railway'e GA_MEASUREMENT_ID=G-XXXXXXXXXX
+  eklendiğinde, yalnızca ziyaretçi analiz izni verdikten sonra yüklenir.
+- Google favicon taramasını kolaylaştırmak için 512x512 logo /favicon.png
+  adresinden de sunulmaktadır.
