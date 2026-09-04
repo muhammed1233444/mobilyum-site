@@ -2,18 +2,8 @@ const menuBtn=document.querySelector('.menu-btn');
 const mobileNav=document.querySelector('.mobile-nav');
 if(menuBtn&&mobileNav){menuBtn.addEventListener('click',()=>{const open=mobileNav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',String(open));menuBtn.textContent=open?'×':'☰'});mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{mobileNav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');menuBtn.textContent='☰'}));}
 const progress=document.querySelector('.progress');
-let progressTick=false;
-const updateProgress=()=>{
-  if(progressTick)return;
-  progressTick=true;
-  requestAnimationFrame(()=>{
-    const h=document.documentElement.scrollHeight-innerHeight;
-    if(progress)progress.style.width=(h>0?(scrollY/h)*100:0)+'%';
-    progressTick=false;
-  });
-};
-addEventListener('scroll',updateProgress,{passive:true});
-updateProgress();
+const updateProgress=()=>{const h=document.documentElement.scrollHeight-innerHeight;if(progress)progress.style.width=(h>0?(scrollY/h)*100:0)+'%'};
+addEventListener('scroll',updateProgress,{passive:true});updateProgress();
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.12});
 document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
 
@@ -37,14 +27,8 @@ document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
     dots.innerHTML=slides.map((_,i)=>`<button class="hero-slider-dot${i===0?' is-active':''}" type="button" aria-label="${i+1}. fotoğraf"></button>`).join('');
     dots.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{go(i);restart()}));
   };
-  const loadSlideImage=(slide)=>{
-    const img=slide?.querySelector('img[data-src]');
-    if(img){img.src=img.dataset.src;img.removeAttribute('data-src');}
-  };
   const go=(to)=>{
     index=(to+slides.length)%slides.length;
-    loadSlideImage(slides[index]);
-    loadSlideImage(slides[(index+1)%slides.length]);
     track.style.transform=`translate3d(${-index*100}%,0,0)`;
     slides.forEach((s,i)=>s.classList.toggle('is-active',i===index));
     dots.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('is-active',i===index));
@@ -65,7 +49,7 @@ document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
 // Lightbox: delegated so products copied into category pages are also clickable.
 const openLightbox=(img)=>{if(!img)return;const layer=document.createElement('div');layer.className='lightbox';layer.innerHTML='<button aria-label="Kapat">×</button><img src="'+img.currentSrc+'" alt="'+(img.alt||'')+'">';document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');setTimeout(()=>layer.remove(),220)};layer.addEventListener('click',e=>{if(e.target===layer||e.target.tagName==='BUTTON')close()});};
 document.addEventListener('click',e=>{const img=e.target.closest('.product-image img,.hero-image img,.campaign-image img,.store-showcase>img');if(img)openLightbox(img)});
-
+const style=document.createElement('style');style.textContent='.lightbox{position:fixed;inset:0;background:rgba(25,21,17,.88);backdrop-filter:blur(10px);z-index:400;display:flex;align-items:center;justify-content:center;padding:5vw;opacity:0;transition:.22s}.lightbox.show{opacity:1}.lightbox img{max-width:92vw;max-height:88vh;width:auto;height:auto;object-fit:contain;box-shadow:0 25px 80px rgba(0,0,0,.35)}.lightbox button{position:absolute;right:25px;top:18px;background:none;border:0;color:white;font-size:36px;cursor:pointer}';document.head.appendChild(style);
 
 // Wedding package modal
 const modal=document.querySelector('.package-modal');
@@ -75,25 +59,28 @@ document.querySelector('.modal-close')?.addEventListener('click',closeModal);doc
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeCategory();}});
 
-// Mouse-following point
+// Mouse-following point — lightweight, desktop-only
 const dot=document.querySelector('.cursor-dot');
-const finePointer=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
-if(finePointer){
-  let mouseX=0,mouseY=0,mouseTick=false;
-  window.addEventListener('mousemove',e=>{
-    mouseX=e.clientX;mouseY=e.clientY;
-    if(mouseTick)return;
-    mouseTick=true;
-    requestAnimationFrame(()=>{
-      if(dot){dot.style.left=mouseX+'px';dot.style.top=mouseY+'px'}
-      document.documentElement.style.setProperty('--mx',mouseX+'px');
-      document.documentElement.style.setProperty('--my',mouseY+'px');
-      mouseTick=false;
-    });
-  },{passive:true});
-}
-document.addEventListener('mouseenter',e=>{const el=e.target.closest?.('a,button');if(el&&dot){dot.style.width='15px';dot.style.height='15px'}},{capture:true});
-document.addEventListener('mouseleave',e=>{const el=e.target.closest?.('a,button');if(el&&dot){dot.style.width='9px';dot.style.height='9px'}},{capture:true});
+let mouseX=0, mouseY=0, rafPending=false;
+const moveDot=()=>{
+  rafPending=false;
+  if(!dot)return;
+  dot.style.left=mouseX+'px';
+  dot.style.top=mouseY+'px';
+};
+window.addEventListener('pointermove',e=>{
+  if(e.pointerType==='touch')return;
+  mouseX=e.clientX; mouseY=e.clientY;
+  if(!rafPending){rafPending=true;requestAnimationFrame(moveDot);}
+},{passive:true});
+document.addEventListener('pointerover',e=>{
+  const el=e.target.closest?.('a,button');
+  if(el&&dot){dot.style.width='17px';dot.style.height='17px';dot.style.boxShadow='0 0 0 2px rgba(255,255,255,.95),0 0 0 8px rgba(200,169,130,.18),0 0 28px rgba(200,169,130,.65)';}
+});
+document.addEventListener('pointerout',e=>{
+  const el=e.target.closest?.('a,button');
+  if(el&&dot){dot.style.width='11px';dot.style.height='11px';dot.style.boxShadow='0 0 0 2px rgba(255,255,255,.9),0 0 0 7px rgba(200,169,130,.16),0 0 24px rgba(200,169,130,.55)';}
+});
 
 // Dedicated category views — ürünler yalnızca admin panelinden gelir.
 const categoryPage=document.getElementById('category-page');
@@ -115,7 +102,7 @@ const whatsapp='905446504459';
 
 function galleryHtml(p){
   const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
-  const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" ${i===0?`src="${escapeHtml(src)}"`:`data-src="${escapeHtml(src)}"`} alt="${escapeHtml(p.name)}" data-index="${i}" loading="lazy" decoding="async">`).join('');
+  const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" src="${escapeHtml(src)}" alt="${escapeHtml(p.name)}" data-index="${i}" loading="lazy">`).join('');
   const controls=imgs.length>1?`
     <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
     <button class="managed-gallery-btn managed-gallery-next" type="button" aria-label="Sonraki fotoğraf">›</button>
@@ -171,7 +158,7 @@ window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'
 /* Admin panelindeki ürünleri tek kaynak olarak kullanır. */
 managedProductsReady=(async()=>{
   try{
-    const res=await fetch('/api/products');
+    const res=await fetch('/api/products',{cache:'no-store'});
     if(!res.ok) throw new Error(`Ürünler alınamadı (${res.status})`);
     const data=await res.json();
     managedProducts=Array.isArray(data)?data:[];
@@ -187,8 +174,6 @@ managedProductsReady=(async()=>{
     const imgs=[...gallery.querySelectorAll('.managed-gallery-img')];
     if(!imgs.length)return;
     index=(index+imgs.length)%imgs.length;
-    const selected=imgs[index];
-    if(selected?.dataset.src){selected.src=selected.dataset.src;selected.removeAttribute('data-src');}
     imgs.forEach((img,i)=>img.classList.toggle('active',i===index));
     gallery.querySelectorAll('.managed-gallery-dot').forEach((dot,i)=>dot.classList.toggle('active',i===index));
     gallery.dataset.galleryIndex=index;

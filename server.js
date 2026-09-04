@@ -18,26 +18,10 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 if (!fs.existsSync(DATA_FILE)) fs.writeFileSync(DATA_FILE, "[]", "utf8");
 
-app.disable("x-powered-by");
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
-
-const staticOptions = {
-  etag: true,
-  setHeaders: (res, filePath) => {
-    if (/\.(?:css|js|png|jpe?g|webp|gif|svg|ico|woff2?)$/i.test(filePath)) {
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-    } else {
-      res.setHeader("Cache-Control", "no-cache");
-    }
-  }
-};
-app.use(express.static(ROOT, staticOptions));
-app.use("/uploads", express.static(UPLOAD_DIR, {
-  etag: true,
-  maxAge: "30d",
-  immutable: true
-}));
+app.use(express.static(ROOT));
+app.use("/uploads", express.static(UPLOAD_DIR));
 
 function readProducts() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, "utf8")); }
@@ -72,10 +56,7 @@ const upload = multer({
   }
 });
 
-app.get("/api/products", (_, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.json(readProducts());
-});
+app.get("/api/products", (_, res) => res.json(readProducts()));
 app.get("/api/admin/check", auth, (_, res) => res.json({ ok: true }));
 
 app.post("/api/products", auth, upload.array("images", 12), (req, res) => {
