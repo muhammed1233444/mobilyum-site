@@ -259,9 +259,18 @@ function renderSeoPageBody(page) {
   const list = page.bullets.map(item => `<li>${escapeHtml(item)}</li>`).join("");
   const paragraphs = page.paragraphs.map(item => `<p>${escapeHtml(item)}</p>`).join("");
   const directions = page.breadcrumb === "İletişim" ? '<a class="btn btn-dark seo-directions" href="https://www.google.com/maps/dir/?api=1&destination=41.1560299%2C27.7987692" target="_blank" rel="noopener noreferrer">Yol tarifi al ↗</a>' : "";
+  const backgroundCopy = `<section class="seo-copy-grid"><div><p class="eyebrow">36 YILLIK DENEYİM</p><h2>${escapeHtml(page.contentTitle)}</h2>${directions}</div><div>${paragraphs}<ul>${list}</ul></div></section>`;
+
+  if (page.category) {
+    return {
+      products: productSection.products,
+      html: `${productSection.html}<details class="seo-background-copy"><summary>Koleksiyon hakkında bilgi</summary>${backgroundCopy}</details>`
+    };
+  }
+
   return {
     products: productSection.products,
-    html: `<section class="seo-copy-grid"><div><p class="eyebrow">36 YILLIK DENEYİM</p><h2>${escapeHtml(page.contentTitle)}</h2>${directions}</div><div>${paragraphs}<ul>${list}</ul></div></section>${productSection.html}`
+    html: `${backgroundCopy}${productSection.html}`
   };
 }
 
@@ -284,7 +293,7 @@ function renderSeoPage(req, res) {
   const replacements = {
     TITLE: escapeHtml(page.title), DESCRIPTION: escapeHtml(page.description), ROBOTS: page.robots || "index, follow, max-image-preview:large",
     CANONICAL: canonical, OG_IMAGE: `https://mobilyumcorlu.com${page.heroImage}`, HERO_IMAGE: page.heroImage,
-    BREADCRUMB: escapeHtml(page.breadcrumb), H1: page.h1, LEAD: escapeHtml(page.lead), IMAGE_ALT: escapeHtml(page.imageAlt), PAGE_CLASS: escapeHtml(page.pageClass || ""),
+    BREADCRUMB: escapeHtml(page.breadcrumb), H1: page.h1, LEAD: escapeHtml(page.lead), IMAGE_ALT: escapeHtml(page.imageAlt), PAGE_CLASS: escapeHtml(page.pageClass || (page.category ? "seo-page-category" : "")),
     WHATSAPP_TEXT: encodeURIComponent(`Merhaba Mobilyum, ${page.breadcrumb} hakkında bilgi almak istiyorum.`), BODY: rendered.html, JSON_LD: JSON.stringify(jsonLd).replace(/</g, "\\u003c")
   };
   const html = SEO_PAGE_TEMPLATE.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => replacements[key] ?? "");

@@ -41,3 +41,13 @@ V9 SEO VE ANALİZ GÜNCELLEMESİ
   eklendiğinde, yalnızca ziyaretçi analiz izni verdikten sonra yüklenir.
 - Google favicon taramasını kolaylaştırmak için 512x512 logo /favicon.png
   adresinden de sunulmaktadır.
+
+V9.1 TASARIM KORUMA DÜZELTMESİ
+------------------------------
+- Ana sayfadaki kategori kartları eski davranışına döndürüldü. Normal tıklamada
+  sayfa değişmez; eski premium kategori ekranı açılır.
+- Admin ürünlerindeki çoklu fotoğraf okları, noktaları ve mobil kaydırma aynen
+  korunmuştur.
+- Yönetim paneli yeniden ürün ekleme alanıyla başlar; analiz kartı en alta
+  taşınmıştır.
+- Gerçek kategori adresleri yalnızca SEO ve yeni sekmede açma için korunmuştur.

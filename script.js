@@ -186,7 +186,11 @@ async function openCategory(k, push=true){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{categoryPage.classList.add('page-ready');categoryPage.querySelector('.category-page-close')?.focus()}));
 }
 function closeCategory(){if(!categoryPage)return;categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/'))history.pushState({},'',location.pathname+location.search);}
-document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{e.preventDefault();openCategory(x.dataset.category)}));
+document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{
+  if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+  e.preventDefault();
+  openCategory(x.dataset.category);
+}));
 document.querySelector('.category-page-close')?.addEventListener('click',closeCategory);
 window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1],false);else{closeCategory();closeModal();}});
 

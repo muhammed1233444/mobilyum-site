@@ -2,13 +2,13 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mobilyum · Site Yönetimi</title>
+<title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="stylesheet" href="admin.css">
 </head>
 <body>
 <div class="shell">
-  <header><div><small>MOBİLYUM</small><h1>Site Yönetimi</h1></div><a href="/" target="_blank">Siteyi aç ↗</a></header>
+  <header><div><small>MOBİLYUM</small><h1>Ürün Yönetimi</h1></div><a href="/" target="_blank">Siteyi aç ↗</a></header>
 
   <section id="login" class="card">
     <h2>Yönetim paneli</h2>
@@ -18,26 +18,8 @@
   </section>
 
   <main id="panel" hidden>
-    <section class="card analytics-card">
-      <div class="card-head"><div><h2>Ziyaretçi analizi</h2><p>Analiz izni veren ziyaretçilerin anonim ve toplu istatistikleri.</p></div><div class="admin-actions"><button id="analyticsRefreshBtn" class="ghost">Yenile</button><button id="logoutBtn" class="ghost">Çıkış</button></div></div>
-      <div class="analytics-stats">
-        <div><small>Yaklaşık ziyaret</small><strong id="statVisits">0</strong></div>
-        <div><small>Sayfa görüntüleme</small><strong id="statPageViews">0</strong></div>
-        <div><small>WhatsApp tıklaması</small><strong id="statWhatsapp">0</strong></div>
-        <div><small>Telefon tıklaması</small><strong id="statPhone">0</strong></div>
-        <div><small>Yol tarifi</small><strong id="statDirections">0</strong></div>
-      </div>
-      <div class="analytics-columns">
-        <div><h3>En çok görüntülenen sayfalar</h3><div id="analyticsPages" class="analytics-list"></div></div>
-        <div><h3>Ziyaret kaynakları</h3><div id="analyticsReferrers" class="analytics-list"></div></div>
-        <div><h3>Cihazlar</h3><div id="analyticsDevices" class="analytics-list"></div></div>
-      </div>
-      <div><h3>Son günler</h3><div id="analyticsDays" class="analytics-days"></div></div>
-      <div id="analyticsMsg" class="msg"></div>
-    </section>
-
     <section class="card">
-      <div class="card-head"><div><h2>Yeni ürün ekle</h2><p>Fotoğrafı seç, bilgileri doldur ve kaydet.</p></div></div>
+      <div class="card-head"><div><h2>Yeni ürün ekle</h2><p>Fotoğrafı seç, bilgileri doldur ve kaydet.</p></div><button id="logoutBtn" class="ghost">Çıkış</button></div>
       <form id="productForm">
         <div class="grid">
           <label>Ürün adı*<input name="name" required placeholder="Örn. Verona Koltuk Takımı"></label>
@@ -69,6 +51,24 @@
     <section class="card">
       <div class="card-head"><div><h2>Eklediğin ürünler</h2><p>Buradan ürünleri silebilirsin.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
       <div id="products" class="products"></div>
+    </section>
+
+    <section class="card analytics-card">
+      <div class="card-head"><div><h2>Ziyaretçi analizi</h2><p>Analiz izni veren ziyaretçilerin anonim ve toplu istatistikleri.</p></div><button id="analyticsRefreshBtn" class="ghost">Yenile</button></div>
+      <div class="analytics-stats">
+        <div><small>Yaklaşık ziyaret</small><strong id="statVisits">0</strong></div>
+        <div><small>Sayfa görüntüleme</small><strong id="statPageViews">0</strong></div>
+        <div><small>WhatsApp tıklaması</small><strong id="statWhatsapp">0</strong></div>
+        <div><small>Telefon tıklaması</small><strong id="statPhone">0</strong></div>
+        <div><small>Yol tarifi</small><strong id="statDirections">0</strong></div>
+      </div>
+      <div class="analytics-columns">
+        <div><h3>En çok görüntülenen sayfalar</h3><div id="analyticsPages" class="analytics-list"></div></div>
+        <div><h3>Ziyaret kaynakları</h3><div id="analyticsReferrers" class="analytics-list"></div></div>
+        <div><h3>Cihazlar</h3><div id="analyticsDevices" class="analytics-list"></div></div>
+      </div>
+      <div><h3>Son günler</h3><div id="analyticsDays" class="analytics-days"></div></div>
+      <div id="analyticsMsg" class="msg"></div>
     </section>
   </main>
 </div>

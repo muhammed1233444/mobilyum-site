@@ -118,6 +118,10 @@ footer{border-top:1px solid var(--line);padding:30px 5vw;display:flex;align-item
 }
 
 .seo-page-wedding .seo-landing-image img,.seo-page-logo .seo-landing-image img{object-fit:contain;padding:30px}
+.seo-page-category .seo-landing-hero{min-height:430px}.seo-page-category .seo-landing-image{min-height:430px}.seo-page-category .seo-landing-copy{padding-top:48px;padding-bottom:48px}
+.seo-background-copy{margin:0 5vw 70px;border-top:1px solid var(--line)}
+.seo-background-copy summary{cursor:pointer;padding:18px 0;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7b6b5c}
+.seo-background-copy .seo-copy-grid{padding:35px 4vw 55px;border:1px solid var(--line)}
 /* V3 premium polish */
 body{overflow-x:hidden}.progress{position:fixed;left:0;top:0;height:3px;width:0;background:#9a8063;z-index:100;box-shadow:0 0 12px rgba(154,128,99,.35)}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}.reveal.visible{opacity:1;transform:none}
