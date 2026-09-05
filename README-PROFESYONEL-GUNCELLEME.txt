@@ -98,3 +98,25 @@ FINAL V10.2 ÜRÜN VİTRİNİ VE KAPAK YÖNETİMİ
   göre değişen hazır açıklama seçenekleri eklenmiştir.
 - Yeni kütüphane veya ağır görsel eklenmemiş; mevcut duman, kategori açılışı,
   ürün galerileri, mobil görünüm, SEO ve yönetim verileri korunmuştur.
+
+FINAL V10.3 MOBİL ÜRÜN SAYFASI, ÖLÇEK VE YEREL SEO
+---------------------------------------------------
+- Ürün detayı telefonda ayrı bir tam ekran mobil düzene dönüştürülmüştür.
+  Fotoğraf, küçük görseller, başlık, açıklama ve butonlar artık doğal akışta
+  yer alır; küçük ekranlarda birbirinin üzerine binmez.
+- Telefonda sabit üst geri çubuğu, parmakla fotoğraf değiştirme ve tam ekran
+  büyütme korunmuştur.
+- Kategori açıldığında bütün ürünler tek seferde çizilmez. Mobilde 8, masaüstünde
+  12 ürün hazırlanır; devamı “ürün daha göster” düğmesiyle kademeli gelir.
+- Ana sayfadaki gizli ürün alanına ikinci kez ürün kartı basılması kaldırılmıştır.
+  Böylece 50 ve daha fazla ürün eklendiğinde gereksiz DOM ve görsel yükü oluşmaz.
+- Yönetim panelindeki ürün küçük görselleri tembel yüklenir; ürün fotoğrafları
+  benzersiz dosya adları sayesinde bir yıl güvenli tarayıcı önbelleğinde tutulur.
+- Sitemap ürün verisi değiştikçe otomatik güncellenir ve kategori ürünlerinin
+  kapak görsellerini Google için image sitemap olarak bildirir.
+- Ana sayfa ile kategori sayfalarındaki Çorlu yerel işletme yapılandırılmış
+  verileri eşitlenmiş; marka alternatif adları, konum, saat, telefon ve mağaza
+  görselleri güçlendirilmiştir.
+- Ana sayfaya gerçek kategori adreslerini gösteren iç bağlantılar eklenmiştir.
+- 512, 192, 48 px PNG ile favicon.ico dosyaları korunmuştur. Google simgesi
+  yayından sonra yeniden tarama tamamlandığında güncellenir.

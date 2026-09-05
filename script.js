@@ -119,8 +119,8 @@ document.addEventListener('click',e=>{const img=e.target.closest('.product-image
 
 // Wedding package modal
 const modal=document.querySelector('.package-modal');
-const closeModal=()=>{if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow='';};
-document.querySelectorAll('.package-open').forEach(b=>b.addEventListener('click',()=>{modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modal.querySelector('.modal-close')?.focus()}));
+const closeModal=()=>{if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');modal.hidden=true;document.body.style.overflow='';};
+document.querySelectorAll('.package-open').forEach(b=>b.addEventListener('click',()=>{modal.hidden=false;modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modal.querySelector('.modal-close')?.focus()}));
 document.querySelector('.modal-close')?.addEventListener('click',closeModal);document.querySelector('.package-modal-backdrop')?.addEventListener('click',closeModal);
 
 document.addEventListener('keydown',e=>{
@@ -245,7 +245,7 @@ function setDetailImage(index){
 
 function renderDetailThumbs(){
   if(!detailThumbs)return;
-  detailThumbs.innerHTML=detailImages.map((src,i)=>`<button type="button" role="listitem" aria-label="${i+1}. fotoğrafı göster" aria-current="${i===0?'true':'false'}" class="${i===0?'is-active':''}" data-detail-index="${i}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" alt="${escapeHtml(activeDetailProduct?.name)} · küçük fotoğraf ${i+1}"></button>`).join('');
+  detailThumbs.innerHTML=detailImages.map((src,i)=>`<button type="button" role="listitem" aria-label="${i+1}. fotoğrafı göster" aria-current="${i===0?'true':'false'}" class="${i===0?'is-active':''}" data-detail-index="${i}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" fetchpriority="low" alt="${escapeHtml(activeDetailProduct?.name)} · küçük fotoğraf ${i+1}"></button>`).join('');
 }
 
 function showProductDetail(product,{push=true}={}){
@@ -270,6 +270,7 @@ function showProductDetail(product,{push=true}={}){
   const message=encodeURIComponent(`Merhaba Mobilyum, ${product.name||'bu ürün'} hakkında ölçü, renk, fiyat ve teslimat bilgisi almak istiyorum.`);
   productDetail.querySelector('.product-detail-whatsapp').href=`https://wa.me/${whatsapp}?text=${message}`;
   renderDetailThumbs();
+  productDetail.hidden=false;
   productDetail.classList.add('open');
   productDetail.setAttribute('aria-hidden','false');
   document.body.classList.add('product-detail-opened');
@@ -278,7 +279,10 @@ function showProductDetail(product,{push=true}={}){
   detailPrev.hidden=!multiple;
   detailNext.hidden=!multiple;
   if(push)history.pushState({product:product.id},'',`#urun/${encodeURIComponent(product.id)}`);
-  requestAnimationFrame(()=>productDetail.querySelector('.product-detail-close')?.focus());
+  requestAnimationFrame(()=>{
+    const mobile=matchMedia('(max-width:900px)').matches;
+    productDetail.querySelector(mobile?'.product-detail-mobile-close':'.product-detail-close')?.focus();
+  });
 }
 
 async function openProductDetailById(id,{push=true,ensureCategory=false}={}){
@@ -300,6 +304,13 @@ function closeProductDetail(restoreHash=true){
   const focusTarget=detailReturnFocus;
   activeDetailProduct=null;
   detailImages=[];
+  setTimeout(()=>{
+    if(productDetail&&!productDetail.classList.contains('open')){
+      productDetail.hidden=true;
+      if(detailMainImage)detailMainImage.removeAttribute('src');
+      if(detailThumbs)detailThumbs.replaceChildren();
+    }
+  },260);
   if(focusTarget?.isConnected)focusTarget.focus({preventScroll:true});
 }
 
@@ -333,21 +344,9 @@ document.addEventListener('click',e=>{
 });
 
 function renderManagedProducts(){
-  if(!managedContainer)return;
-  managedContainer.innerHTML='';
-  const order=['Yatak Odaları','Oturma Grupları','Yemek Odaları','Genç Odaları'];
-  const cats=[...order,...managedProducts.map(p=>p.category).filter(c=>c&&!order.includes(c))];
-  [...new Set(cats)].forEach((category,i)=>{
-    const list=managedProducts.filter(p=>p.category===category);
-    if(!list.length)return;
-    const group=document.createElement('div');
-    group.className='product-group reveal';
-    group.id=categoryIds[category]||('managed-'+i);
-    group.innerHTML=`<div class="group-title"><span>${String(i+1).padStart(2,'0')}</span><h3>${escapeHtml(category)}</h3><em>${list.length} model</em></div><div class="product-grid"></div>`;
-    group.querySelector('.product-grid').innerHTML=list.map(productCardHtml).join('');
-    managedContainer.appendChild(group);
-    observeSmartImages(group);
-  });
+  // Ana sayfadaki vitrin tasarım gereği gizli. Ürünleri burada tekrar çizmek,
+  // görünmeyen onlarca kart ve görsel düğümü oluşturarak belleği gereksiz tüketiyordu.
+  managedContainer?.replaceChildren();
 }
 function warmCategoryCovers(){
   if(navigator.connection?.saveData===true||/2g/.test(navigator.connection?.effectiveType||''))return;
@@ -357,24 +356,57 @@ function warmCategoryCovers(){
     if(src){const img=new Image();img.decoding='async';img.src=src;}
   });
 }
+let activeCategoryProducts=[];
+let renderedCategoryCount=0;
+const categoryBatchSize=()=>matchMedia('(max-width:800px)').matches?8:12;
+
+function appendCategoryBatch(){
+  if(!categoryProducts||renderedCategoryCount>=activeCategoryProducts.length)return;
+  categoryProducts.querySelector('.category-load-more')?.remove();
+  const next=activeCategoryProducts.slice(renderedCategoryCount,renderedCategoryCount+categoryBatchSize());
+  const template=document.createElement('template');
+  template.innerHTML=next.map(productCardHtml).join('');
+  const fragment=template.content;
+  const newCards=[...fragment.querySelectorAll('.managed-product')];
+  categoryProducts.appendChild(fragment);
+  renderedCategoryCount+=next.length;
+  observeSmartImages(categoryProducts);
+
+  const remaining=activeCategoryProducts.length-renderedCategoryCount;
+  if(remaining>0){
+    const more=document.createElement('div');
+    more.className='category-load-more';
+    more.innerHTML=`<span aria-live="polite">${renderedCategoryCount} / ${activeCategoryProducts.length} model gösteriliyor</span><button type="button">${Math.min(categoryBatchSize(),remaining)} ürün daha göster <b>↓</b></button>`;
+    more.querySelector('button').addEventListener('click',appendCategoryBatch,{once:true});
+    categoryProducts.appendChild(more);
+  }
+  requestAnimationFrame(()=>newCards.forEach(card=>card.classList.add('batch-ready')));
+}
+
 function renderCategory(k){
   const d=categoryData[k];
   if(!d)return;
   title.innerHTML=d.title;
-  desc.textContent=d.desc;
-  const list=managedProducts.filter(p=>p.category===d.name);
-  categoryProducts.innerHTML=list.length?list.map(productCardHtml).join(''):'<div class="empty-products"><div><span>ŞU ANDA ÜRÜN YOK</span><h4>Yakında burada.</h4><p>Bu kategorideki ürünler mağaza yönetim panelinden eklenecek.</p></div></div>';
-  observeSmartImages(categoryProducts);
+  activeCategoryProducts=managedProducts.filter(p=>p.category===d.name);
+  renderedCategoryCount=0;
+  desc.textContent=activeCategoryProducts.length?`${d.desc} Toplam ${activeCategoryProducts.length} model.`:d.desc;
+  categoryProducts.replaceChildren();
+  if(!activeCategoryProducts.length){
+    categoryProducts.innerHTML='<div class="empty-products"><div><span>ŞU ANDA ÜRÜN YOK</span><h4>Yakında burada.</h4><p>Bu kategorideki ürünler mağaza yönetim panelinden eklenecek.</p></div></div>';
+    return;
+  }
+  appendCategoryBatch();
 }
 async function openCategory(k, push=true){
   const d=categoryData[k]; if(!d)return;
   await managedProductsReady;
   renderCategory(k);
+  categoryPage.hidden=false;
   categoryPage.classList.add('open');categoryPage.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
   if(push)history.pushState({category:k},'', '#kategori/'+k);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{categoryPage.classList.add('page-ready');if(!productDetail?.classList.contains('open'))categoryPage.querySelector('.category-page-close')?.focus()}));
 }
-function closeCategory(){if(!categoryPage)return;closeProductDetail(false);categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/')||location.hash.startsWith('#urun/'))history.pushState({},'',location.pathname+location.search);}
+function closeCategory(){if(!categoryPage)return;closeProductDetail(false);categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';setTimeout(()=>{if(!categoryPage.classList.contains('open')){categoryPage.hidden=true;categoryProducts?.replaceChildren();activeCategoryProducts=[];renderedCategoryCount=0}},460);if(location.hash.startsWith('#kategori/')||location.hash.startsWith('#urun/'))history.pushState({},'',location.pathname+location.search);}
 document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{
   if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
   e.preventDefault();
@@ -392,7 +424,7 @@ window.addEventListener('popstate',async()=>{
 /* Admin panelindeki ürünleri tek kaynak olarak kullanır. */
 managedProductsReady=(async()=>{
   try{
-    const res=await fetch('/api/products',{cache:'no-store'});
+    const res=await fetch('/api/products',{cache:'no-cache'});
     if(!res.ok) throw new Error(`Ürünler alınamadı (${res.status})`);
     const data=await res.json();
     managedProducts=Array.isArray(data)?data:[];

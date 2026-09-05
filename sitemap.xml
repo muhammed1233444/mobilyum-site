@@ -1,51 +1,60 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://mobilyumcorlu.com/</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/mobilyum-corlu-og.jpg</image:loc></image:image>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/store.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/yatak-odasi</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/hero-yatak-featured.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/koltuk-takimlari</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/category-oturma.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/yemek-odasi</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/category-yemek.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/genc-odasi</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/category-genc.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/dugun-paketi</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/dugun-paketi.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/hakkimizda</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/about-mobilyum.webp</image:loc></image:image>
   </url>
   <url>
     <loc>https://mobilyumcorlu.com/iletisim</loc>
-    <lastmod>2026-09-04</lastmod>
+    <lastmod>2026-09-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+    <image:image><image:loc>https://mobilyumcorlu.com/assets/optimized/store.webp</image:loc></image:image>
   </url>
 </urlset>

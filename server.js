@@ -54,8 +54,8 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/assets", express.static(ASSET_DIR, { etag: true, lastModified: true, maxAge: "1y", immutable: true }));
-app.use("/uploads", express.static(UPLOAD_DIR, { etag: true, lastModified: true, maxAge: "30d" }));
-app.use("/uploads", express.static(BUNDLED_UPLOAD_DIR, { etag: true, lastModified: true, maxAge: "30d" }));
+app.use("/uploads", express.static(UPLOAD_DIR, { etag: true, lastModified: true, maxAge: "1y", immutable: true }));
+app.use("/uploads", express.static(BUNDLED_UPLOAD_DIR, { etag: true, lastModified: true, maxAge: "1y", immutable: true }));
 
 const sendPublicFile = (fileName, cacheControl = "no-cache") => (_, res) => {
   res.setHeader("Cache-Control", cacheControl);
@@ -76,7 +76,7 @@ app.get("/site-config.js", (_, res) => {
 });
 app.get("/site.webmanifest", sendPublicFile("site.webmanifest", "public, max-age=86400"));
 app.get("/robots.txt", sendPublicFile("robots.txt", "public, max-age=3600"));
-app.get("/sitemap.xml", sendPublicFile("sitemap.xml", "public, max-age=3600"));
+app.get("/sitemap.xml", (req, res) => renderSitemap(req, res));
 app.get("/health", (_, res) => {
   try {
     fs.accessSync(DATA_DIR, fs.constants.R_OK | fs.constants.W_OK);
@@ -244,6 +244,42 @@ function safeProductImage(product) {
   return /^\/(assets|uploads)\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(image) ? image : "/assets/optimized/mobilyum-corlu-og.jpg";
 }
 
+function xmlEscape(value = "") {
+  return String(value).replace(/[<>&'\"]/g, char => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" })[char]);
+}
+
+function latestContentDate() {
+  const candidates = [path.join(ROOT, "index.html"), path.join(ROOT, "seo-page.html"), DATA_FILE];
+  const timestamp = Math.max(...candidates.map(file => {
+    try { return fs.statSync(file).mtimeMs; } catch { return 0; }
+  }));
+  return new Date(timestamp || Date.now()).toISOString().slice(0, 10);
+}
+
+function renderSitemap(_, res) {
+  const lastmod = latestContentDate();
+  const products = readProducts();
+  const pages = [
+    { path: "/", priority: "1.0", changefreq: "weekly", images: ["/assets/optimized/mobilyum-corlu-og.jpg", "/assets/optimized/store.webp"] },
+    ...Object.entries(SEO_PAGES)
+      .filter(([, page]) => !String(page.robots || "").includes("noindex"))
+      .map(([pagePath, page]) => ({
+        path: pagePath,
+        priority: page.category ? "0.9" : (pagePath === "/iletisim" ? "0.8" : "0.7"),
+        changefreq: page.category ? "weekly" : "monthly",
+        images: [page.heroImage, ...(page.category ? products.filter(product => product.category === page.category).map(safeProductImage) : [])]
+      }))
+  ];
+  const urls = pages.map(page => {
+    const images = [...new Set(page.images.filter(Boolean))]
+      .map(image => `<image:image><image:loc>${xmlEscape(new URL(image, "https://mobilyumcorlu.com").href)}</image:loc></image:image>`)
+      .join("");
+    return `<url><loc>${xmlEscape(new URL(page.path, "https://mobilyumcorlu.com").href)}</loc><lastmod>${lastmod}</lastmod><changefreq>${page.changefreq}</changefreq><priority>${page.priority}</priority>${images}</url>`;
+  }).join("");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${urls}</urlset>`);
+}
+
 function renderSeoProducts(category) {
   const products = readProducts().filter(product => product.category === category);
   const cards = products.map((product, index) => {
@@ -252,7 +288,7 @@ function renderSeoProducts(category) {
     const price = escapeHtml(product.price || "Fiyat için bilgi alın");
     const image = escapeHtml(safeProductImage(product));
     const detailUrl = `/#urun/${encodeURIComponent(String(product.id || ""))}`;
-    return `<article class="product-card seo-product-card" id="model-${index + 1}"><a class="seo-product-image-link" href="${detailUrl}" aria-label="${name} ürününü detaylı incele"><div class="product-image"><img src="${image}" loading="lazy" decoding="async" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div></a><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2><a href="${detailUrl}">${name}</a></h2><span>${price}</span><small class="managed-desc">${description}</small><a class="product-btn" href="${detailUrl}">Ürünü detaylı incele →</a></div></article>`;
+    return `<article class="product-card seo-product-card" id="model-${index + 1}"><a class="seo-product-image-link" href="${detailUrl}" aria-label="${name} ürününü detaylı incele"><div class="product-image"><img src="${image}" loading="lazy" decoding="async" fetchpriority="low" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div></a><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2><a href="${detailUrl}">${name}</a></h2><span>${price}</span><small class="managed-desc">${description}</small><a class="product-btn" href="${detailUrl}">Ürünü detaylı incele →</a></div></article>`;
   }).join("");
   return {
     products,
@@ -294,8 +330,8 @@ function renderSeoPage(req, res) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "FurnitureStore", "@id": "https://mobilyumcorlu.com/#store", name: "Mobilyum Çorlu", url: "https://mobilyumcorlu.com/", telephone: "+90 544 650 44 59", logo: { "@type": "ImageObject", url: "https://mobilyumcorlu.com/favicon.png", width: 512, height: 512 }, address: { "@type": "PostalAddress", streetAddress: "Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53", addressLocality: "Çorlu", addressRegion: "Tekirdağ", postalCode: "59850", addressCountry: "TR" }, openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "09:00", closes: "20:00" }, { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "12:00", closes: "19:00" }] },
-      { "@type": page.category ? "CollectionPage" : "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: "tr-TR", about: { "@id": "https://mobilyumcorlu.com/#store" }, primaryImageOfPage: { "@type": "ImageObject", url: `https://mobilyumcorlu.com${page.heroImage}` } },
+      { "@type": "FurnitureStore", "@id": "https://mobilyumcorlu.com/#store", name: "Mobilyum Çorlu", alternateName: ["Mobilyum", "Mobilyum Mobilya", "Mobilyum Çorlu Mobilya Mağazası"], slogan: "Evinize değer katar", url: "https://mobilyumcorlu.com/", telephone: "+90 544 650 44 59", contactPoint: { "@type": "ContactPoint", telephone: "+90 544 650 44 59", contactType: "customer service", areaServed: "TR", availableLanguage: "Turkish" }, logo: { "@type": "ImageObject", url: "https://mobilyumcorlu.com/favicon.png", width: 512, height: 512 }, image: ["https://mobilyumcorlu.com/assets/optimized/mobilyum-corlu-og.jpg", "https://mobilyumcorlu.com/assets/optimized/store.webp"], description: "Çorlu'da yatak odası, koltuk takımı, yemek odası ve genç odası seçenekleri sunan mobilya mağazası.", address: { "@type": "PostalAddress", streetAddress: "Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53", addressLocality: "Çorlu", addressRegion: "Tekirdağ", postalCode: "59850", addressCountry: "TR" }, geo: { "@type": "GeoCoordinates", latitude: 41.1560299, longitude: 27.7987692 }, hasMap: "https://www.google.com/maps/search/?api=1&query=Mobilyum%20%C3%87orlu", areaServed: { "@type": "City", name: "Çorlu" }, priceRange: "$$", sameAs: ["https://www.instagram.com/mobilyumcorlu/"], openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "09:00", closes: "20:00" }, { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "12:00", closes: "19:00" }] },
+      { "@type": page.category ? "CollectionPage" : "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: "tr-TR", dateModified: latestContentDate(), about: { "@id": "https://mobilyumcorlu.com/#store" }, primaryImageOfPage: { "@type": "ImageObject", url: `https://mobilyumcorlu.com${page.heroImage}` } },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://mobilyumcorlu.com/" }, { "@type": "ListItem", position: 2, name: page.breadcrumb, item: canonical }] }
     ]
   };
@@ -456,7 +492,7 @@ app.post("/api/analytics/event", (req, res) => {
   res.status(204).end();
 });
 
-app.get("/api/products", (_, res) => { res.setHeader("Cache-Control", "no-store"); res.json(readProducts()); });
+app.get("/api/products", (_, res) => { res.setHeader("Cache-Control", "public, max-age=0, must-revalidate"); res.json(readProducts()); });
 app.get("/api/admin/check", auth, (_, res) => res.json({ ok: true }));
 app.get("/api/admin/analytics", auth, (_, res) => { res.setHeader("Cache-Control", "no-store"); res.json(readAnalytics()); });
 app.get("/api/admin/export", auth, (_, res) => {

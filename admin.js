@@ -194,7 +194,7 @@ async function loadProducts(){
   box.innerHTML=items.map(p=>{
     const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];
     const cover=(p.image&&imgs.includes(p.image)?p.image:imgs[Number(p.coverIndex)||0])||imgs[0];
-    const thumbs=imgs.filter(Boolean).slice(0,12).map((src,i)=>`<button type="button" class="item-cover${src===cover?' is-cover':''}" data-id="${escapeHtml(p.id)}" data-index="${i}" aria-pressed="${src===cover?'true':'false'}" title="${src===cover?'Mevcut kapak':'Bu fotoğrafı kapak yap'}"><img src="${escapeHtml(src)}" alt="Fotoğraf ${i+1}"><span>${src===cover?'Kapak':'Kapak yap'}</span></button>`).join("");
+    const thumbs=imgs.filter(Boolean).slice(0,12).map((src,i)=>`<button type="button" class="item-cover${src===cover?' is-cover':''}" data-id="${escapeHtml(p.id)}" data-index="${i}" aria-pressed="${src===cover?'true':'false'}" title="${src===cover?'Mevcut kapak':'Bu fotoğrafı kapak yap'}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" fetchpriority="low" alt="Fotoğraf ${i+1}"><span>${src===cover?'Kapak':'Kapak yap'}</span></button>`).join("");
     return `<article class="item">
       <div class="item-images">${thumbs}</div>
       <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${escapeHtml(p.price)}</p><small>${imgs.length} fotoğraf</small>
