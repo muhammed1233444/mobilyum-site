@@ -1,10 +1,11 @@
 const menuBtn=document.querySelector('.menu-btn');
 const mobileNav=document.querySelector('.mobile-nav');
+const siteHeader=document.querySelector('.nav');
 const closeMobileMenu=()=>{if(!menuBtn||!mobileNav)return;mobileNav.classList.remove('open');menuBtn.setAttribute('aria-expanded','false');menuBtn.setAttribute('aria-label','Menüyü aç');menuBtn.textContent='☰';};
 if(menuBtn&&mobileNav){menuBtn.addEventListener('click',()=>{const open=mobileNav.classList.toggle('open');menuBtn.setAttribute('aria-expanded',String(open));menuBtn.setAttribute('aria-label',open?'Menüyü kapat':'Menüyü aç');menuBtn.textContent=open?'×':'☰'});mobileNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',closeMobileMenu));document.addEventListener('click',e=>{if(mobileNav.classList.contains('open')&&!mobileNav.contains(e.target)&&!menuBtn.contains(e.target))closeMobileMenu()});}
 const progress=document.querySelector('.progress');
 let progressFrame=0;
-const updateProgress=()=>{progressFrame=0;const h=document.documentElement.scrollHeight-innerHeight;if(progress)progress.style.transform=`scaleX(${h>0?Math.min(1,scrollY/h):0})`};
+const updateProgress=()=>{progressFrame=0;const h=document.documentElement.scrollHeight-innerHeight;if(progress)progress.style.transform=`scaleX(${h>0?Math.min(1,scrollY/h):0})`;siteHeader?.classList.toggle('is-scrolled',scrollY>18)};
 addEventListener('scroll',()=>{if(!progressFrame)progressFrame=requestAnimationFrame(updateProgress)},{passive:true});updateProgress();
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.03,rootMargin:'0px 0px 80px 0px'});
 document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
@@ -110,9 +111,11 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
   restart();
 })();
 
-// Lightbox: delegated so products copied into category pages are also clickable.
-const openLightbox=(img)=>{if(!img)return;const src=img.currentSrc||img.src||img.dataset.smartSrc||img.dataset.gallerySrc;if(!src)return;const layer=document.createElement('div');layer.className='lightbox';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-label','Ürün fotoğrafı');layer.innerHTML='<button type="button" aria-label="Fotoğrafı kapat">×</button><img src="'+src+'" alt="'+(img.alt||'')+'">';document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');setTimeout(()=>layer.remove(),220)};layer.addEventListener('click',e=>{if(e.target===layer||e.target.tagName==='BUTTON')close()});};
-document.addEventListener('click',e=>{const img=e.target.closest('.hero-image img,.campaign-image img,.store-showcase>img');if(img)openLightbox(img)});
+// Tam ekran fotoğraf büyütme. Ürün kartındaki fotoğraf önce ürün detayını açar;
+// detay ekranındaki büyük fotoğraf ise buradan tam ekran büyütülür.
+let activeLightboxClose=null;
+const openLightbox=(img)=>{if(!img)return;const src=img.currentSrc||img.src||img.dataset.smartSrc||img.dataset.gallerySrc;if(!src)return;const returnFocus=document.activeElement;const layer=document.createElement('div');layer.className='lightbox';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-label','Ürün fotoğrafı');const closeButton=document.createElement('button');closeButton.type='button';closeButton.setAttribute('aria-label','Fotoğrafı kapat');closeButton.textContent='×';const zoomed=document.createElement('img');zoomed.src=src;zoomed.alt=img.alt||'';layer.append(closeButton,zoomed);document.body.appendChild(layer);requestAnimationFrame(()=>layer.classList.add('show'));const close=()=>{layer.classList.remove('show');activeLightboxClose=null;if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});setTimeout(()=>layer.remove(),220)};activeLightboxClose=close;layer.addEventListener('click',e=>{if(e.target===layer||e.target===closeButton)close()});closeButton.focus();};
+document.addEventListener('click',e=>{const img=e.target.closest('.product-image img,.hero-image img,.campaign-image img,.store-showcase>img');if(!img)return;if(img.closest('.managed-product'))return;openLightbox(img)});
 
 // Wedding package modal
 const modal=document.querySelector('.package-modal');
@@ -120,7 +123,23 @@ const closeModal=()=>{if(!modal)return;modal.classList.remove('open');modal.setA
 document.querySelectorAll('.package-open').forEach(b=>b.addEventListener('click',()=>{modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';modal.querySelector('.modal-close')?.focus()}));
 document.querySelector('.modal-close')?.addEventListener('click',closeModal);document.querySelector('.package-modal-backdrop')?.addEventListener('click',closeModal);
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMobileMenu();closeModal();closeCategory();}});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(activeLightboxClose){activeLightboxClose();return}
+    if(productDetail?.classList.contains('open')){closeProductDetail();return}
+    closeMobileMenu();closeModal();closeCategory();
+  }
+  if(activeLightboxClose)return;
+  if(productDetail?.classList.contains('open')&&e.key==='ArrowLeft'){e.preventDefault();setDetailImage(detailImageIndex-1)}
+  if(productDetail?.classList.contains('open')&&e.key==='ArrowRight'){e.preventDefault();setDetailImage(detailImageIndex+1)}
+  if(productDetail?.classList.contains('open')&&e.key==='Tab'){
+    const focusable=[...productDetail.querySelectorAll('button:not([hidden]):not([disabled]),a[href]')].filter(node=>node.offsetParent!==null);
+    if(!focusable.length)return;
+    const first=focusable[0],last=focusable[focusable.length-1];
+    if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+    else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+  }
+});
 
 // Fareyi takip eden premium nokta: yalnızca gerçek masaüstü işaretçilerinde çalışır.
 const dot=document.querySelector('.cursor-dot');
@@ -152,8 +171,17 @@ const categoryIds={'Yatak Odaları':'urunler-yatak','Oturma Grupları':'urunler-
 const escapeHtml=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 const whatsapp='905446504459';
 
+function getProductImages(p){
+  const originals=(Array.isArray(p?.images)&&p.images.length?p.images:[p?.image]).filter(Boolean);
+  const unique=[...new Set(originals)];
+  const coverIndex=Number.isInteger(Number(p?.coverIndex))?Number(p.coverIndex):0;
+  const indexed=unique[coverIndex];
+  const cover=(p?.image&&unique.includes(p.image)?p.image:indexed)||unique[0];
+  return cover?[cover,...unique.filter(src=>src!==cover)]:[];
+}
+
 function galleryHtml(p){
-  const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
+  const imgs=getProductImages(p);
   const slides=imgs.map((src,i)=>`<img class="managed-gallery-img${i===0?' active':''}" ${i===0?'data-smart-src':'data-gallery-src'}="${escapeHtml(src)}" alt="${escapeHtml(p.name)}${i?` · ${i+1}. fotoğraf`:''}" data-index="${i}" decoding="async">`).join('');
   const controls=imgs.length>1?`
     <button class="managed-gallery-btn managed-gallery-prev" type="button" aria-label="Önceki fotoğraf">‹</button>
@@ -162,16 +190,148 @@ function galleryHtml(p){
   return `<div class="product-image managed-gallery" data-gallery-count="${imgs.length}">${slides}${p.tag?`<span class="product-tag">${escapeHtml(p.tag)}</span>`:''}${controls}</div>`;
 }
 function productCardHtml(p){
-  const imgs=(Array.isArray(p.images)&&p.images.length?p.images:[p.image]).filter(Boolean);
-  const quickData=`data-quick-view="1" data-qv-name="${escapeHtml(p.name)}" data-qv-category="${escapeHtml(p.category||'Mobilyum')}" data-qv-type="${escapeHtml(p.type||'Mobilya')}" data-qv-price="${escapeHtml(p.price||'Fiyat için bilgi alın')}" data-qv-old-price="${escapeHtml(p.oldPrice||'')}" data-qv-tag="${escapeHtml(p.tag||'')}" data-qv-description="${escapeHtml(p.description||'')}" data-qv-images="${escapeHtml(JSON.stringify(imgs))}"`;
-  return `<article class="product-card managed-product" ${quickData}>
+  return `<article class="product-card managed-product" data-product-id="${escapeHtml(p.id)}">
     ${galleryHtml(p)}
     <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h4>${escapeHtml(p.name)}</h4>
     <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
     ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
-    <div class="product-card-actions"><a class="product-btn" href="https://wa.me/${whatsapp}?text=${encodeURIComponent('Merhaba Mobilyum, '+p.name+' hakkında bilgi almak istiyorum.')}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a><button class="quick-view-open" type="button" aria-label="${escapeHtml(p.name)} ürününü hızlı incele">Hızlı incele <span aria-hidden="true">↗</span></button></div></div>
+    <button class="product-btn product-detail-open" type="button" data-product-id="${escapeHtml(p.id)}">Ürünü detaylı incele →</button></div>
   </article>`;
 }
+
+// Premium ürün vitrini: galeri yalnızca müşteri ürünü açtığında hazırlanır.
+const productDetail=document.getElementById('product-detail');
+const detailMainImage=document.getElementById('product-detail-image');
+const detailThumbs=productDetail?.querySelector('.product-detail-thumbs');
+const detailCounter=productDetail?.querySelector('.product-detail-counter');
+const detailPrev=productDetail?.querySelector('.product-detail-prev');
+const detailNext=productDetail?.querySelector('.product-detail-next');
+const detailShare=productDetail?.querySelector('.product-detail-share');
+const detailZoom=productDetail?.querySelector('.product-detail-zoom');
+let activeDetailProduct=null;
+let detailImages=[];
+let detailImageIndex=0;
+let detailReturnFocus=null;
+let detailPreviousHash='';
+let detailTouchStartX=null;
+
+const categoryKeyForProduct=category=>Object.keys(categoryData).find(key=>categoryData[key].name===category);
+const productIdFromHash=()=>{try{return decodeURIComponent(location.hash.slice(6))}catch{return ''}};
+const defaultProductDescription=category=>({
+  'Yatak Odaları':'Modern çizgileri ve kullanışlı detaylarıyla yatak odanıza düzenli, şık ve huzurlu bir görünüm kazandırır.',
+  'Oturma Grupları':'Konforlu oturumu ve dengeli tasarımıyla salonunuzda hem günlük kullanıma hem de misafirlerinize uyum sağlar.',
+  'Yemek Odaları':'Birbiriyle uyumlu parçaları ve zamansız tasarımıyla sofralarınıza sıcak, düzenli ve şık bir atmosfer katar.',
+  'Genç Odaları':'Çalışma, dinlenme ve depolama ihtiyaçlarını bir araya getiren kullanışlı tasarımıyla genç odalarına uyum sağlar.'
+}[category]||'Evinize uyum sağlayan tasarımı ve kullanışlı detaylarıyla yaşam alanınızı tamamlar.');
+
+function setDetailImage(index){
+  if(!detailImages.length||!detailMainImage)return;
+  detailImageIndex=(index+detailImages.length)%detailImages.length;
+  const src=detailImages[detailImageIndex];
+  detailMainImage.src=src;
+  detailMainImage.alt=`${activeDetailProduct?.name||'Mobilyum ürünü'} · ${detailImageIndex+1}. fotoğraf`;
+  if(detailCounter)detailCounter.textContent=`${detailImageIndex+1} / ${detailImages.length}`;
+  detailThumbs?.querySelectorAll('button').forEach((button,i)=>{
+    const active=i===detailImageIndex;
+    button.classList.toggle('is-active',active);
+    button.setAttribute('aria-current',active?'true':'false');
+    if(active)button.scrollIntoView({block:'nearest',inline:'nearest'});
+  });
+  if(navigator.connection?.saveData!==true&&detailImages.length>1){
+    const next=new Image();
+    next.src=detailImages[(detailImageIndex+1)%detailImages.length];
+  }
+}
+
+function renderDetailThumbs(){
+  if(!detailThumbs)return;
+  detailThumbs.innerHTML=detailImages.map((src,i)=>`<button type="button" role="listitem" aria-label="${i+1}. fotoğrafı göster" aria-current="${i===0?'true':'false'}" class="${i===0?'is-active':''}" data-detail-index="${i}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" alt="${escapeHtml(activeDetailProduct?.name)} · küçük fotoğraf ${i+1}"></button>`).join('');
+}
+
+function showProductDetail(product,{push=true}={}){
+  if(!productDetail||!product)return;
+  activeDetailProduct=product;
+  detailImages=getProductImages(product);
+  if(!detailImages.length)return;
+  detailImageIndex=0;
+  detailReturnFocus=document.activeElement;
+  const productCategoryKey=categoryKeyForProduct(product.category);
+  detailPreviousHash=location.hash.startsWith('#kategori/')?location.hash:(productCategoryKey?`#kategori/${productCategoryKey}`:location.pathname+location.search);
+  productDetail.querySelector('#product-detail-category').textContent=`MOBİLYUM · ${product.category||'KOLEKSİYON'}`;
+  productDetail.querySelector('#product-detail-title').textContent=product.name||'Mobilyum ürünü';
+  productDetail.querySelector('.product-detail-description').textContent=product.description||defaultProductDescription(product.category);
+  const badges=[product.type,product.tag].filter(Boolean);
+  productDetail.querySelector('.product-detail-badges').innerHTML=badges.map(value=>`<span>${escapeHtml(value)}</span>`).join('');
+  const price=productDetail.querySelector('.product-detail-price strong');
+  const oldPrice=productDetail.querySelector('.product-detail-price del');
+  price.textContent=product.price||'Fiyat için bilgi alın';
+  oldPrice.textContent=product.oldPrice||'';
+  oldPrice.hidden=!product.oldPrice;
+  const message=encodeURIComponent(`Merhaba Mobilyum, ${product.name||'bu ürün'} hakkında ölçü, renk, fiyat ve teslimat bilgisi almak istiyorum.`);
+  productDetail.querySelector('.product-detail-whatsapp').href=`https://wa.me/${whatsapp}?text=${message}`;
+  renderDetailThumbs();
+  productDetail.classList.add('open');
+  productDetail.setAttribute('aria-hidden','false');
+  document.body.classList.add('product-detail-opened');
+  setDetailImage(0);
+  const multiple=detailImages.length>1;
+  detailPrev.hidden=!multiple;
+  detailNext.hidden=!multiple;
+  if(push)history.pushState({product:product.id},'',`#urun/${encodeURIComponent(product.id)}`);
+  requestAnimationFrame(()=>productDetail.querySelector('.product-detail-close')?.focus());
+}
+
+async function openProductDetailById(id,{push=true,ensureCategory=false}={}){
+  const product=managedProducts.find(item=>String(item.id)===String(id));
+  if(!product)return;
+  if(ensureCategory){
+    const key=categoryKeyForProduct(product.category);
+    if(key)await openCategory(key,false);
+  }
+  showProductDetail(product,{push});
+}
+
+function closeProductDetail(restoreHash=true){
+  if(!productDetail?.classList.contains('open'))return;
+  productDetail.classList.remove('open');
+  productDetail.setAttribute('aria-hidden','true');
+  document.body.classList.remove('product-detail-opened');
+  if(restoreHash&&location.hash.startsWith('#urun/'))history.replaceState({category:true},'',detailPreviousHash||location.pathname+location.search);
+  const focusTarget=detailReturnFocus;
+  activeDetailProduct=null;
+  detailImages=[];
+  if(focusTarget?.isConnected)focusTarget.focus({preventScroll:true});
+}
+
+detailPrev?.addEventListener('click',()=>setDetailImage(detailImageIndex-1));
+detailNext?.addEventListener('click',()=>setDetailImage(detailImageIndex+1));
+detailZoom?.addEventListener('click',()=>openLightbox(detailMainImage));
+detailThumbs?.addEventListener('click',e=>{const button=e.target.closest('[data-detail-index]');if(button)setDetailImage(Number(button.dataset.detailIndex))});
+productDetail?.querySelectorAll('[data-detail-close]').forEach(button=>button.addEventListener('click',()=>closeProductDetail()));
+productDetail?.querySelector('.product-detail-stage')?.addEventListener('touchstart',e=>{detailTouchStartX=e.touches[0]?.clientX??null},{passive:true});
+productDetail?.querySelector('.product-detail-stage')?.addEventListener('touchend',e=>{if(detailTouchStartX===null)return;const dx=(e.changedTouches[0]?.clientX??detailTouchStartX)-detailTouchStartX;detailTouchStartX=null;if(Math.abs(dx)>45)setDetailImage(detailImageIndex+(dx<0?1:-1))},{passive:true});
+detailShare?.addEventListener('click',async()=>{
+  if(!activeDetailProduct)return;
+  const url=new URL(location.href);
+  url.hash=`urun/${encodeURIComponent(activeDetailProduct.id)}`;
+  const original=detailShare.innerHTML;
+  try{
+    if(navigator.share)await navigator.share({title:`${activeDetailProduct.name} · Mobilyum Çorlu`,text:`${activeDetailProduct.name} modelini incele`,url:url.href});
+    else{await navigator.clipboard.writeText(url.href);detailShare.textContent='Bağlantı kopyalandı ✓';setTimeout(()=>{detailShare.innerHTML=original},1800)}
+  }catch(error){if(error?.name!=='AbortError'){detailShare.textContent='Bağlantı kopyalanamadı';setTimeout(()=>{detailShare.innerHTML=original},1800)}}
+});
+
+document.addEventListener('click',e=>{
+  const card=e.target.closest('.managed-product');
+  const trigger=e.target.closest('.product-detail-open');
+  if(!card&&!trigger)return;
+  if(e.target.closest('.managed-gallery-btn,.managed-gallery-dot,a'))return;
+  const id=(trigger||card)?.dataset.productId||card?.dataset.productId;
+  if(!id)return;
+  e.preventDefault();
+  openProductDetailById(id);
+});
+
 function renderManagedProducts(){
   if(!managedContainer)return;
   managedContainer.innerHTML='';
@@ -193,7 +353,7 @@ function warmCategoryCovers(){
   if(navigator.connection?.saveData===true||/2g/.test(navigator.connection?.effectiveType||''))return;
   ['Yatak Odaları','Oturma Grupları','Yemek Odaları','Genç Odaları'].forEach(category=>{
     const product=managedProducts.find(item=>item.category===category);
-    const src=(Array.isArray(product?.images)&&product.images[0])||product?.image;
+    const src=getProductImages(product)[0];
     if(src){const img=new Image();img.decoding='async';img.src=src;}
   });
 }
@@ -212,16 +372,22 @@ async function openCategory(k, push=true){
   renderCategory(k);
   categoryPage.classList.add('open');categoryPage.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
   if(push)history.pushState({category:k},'', '#kategori/'+k);
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{categoryPage.classList.add('page-ready');categoryPage.querySelector('.category-page-close')?.focus()}));
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{categoryPage.classList.add('page-ready');if(!productDetail?.classList.contains('open'))categoryPage.querySelector('.category-page-close')?.focus()}));
 }
-function closeCategory(){if(!categoryPage)return;categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/'))history.pushState({},'',location.pathname+location.search);}
+function closeCategory(){if(!categoryPage)return;closeProductDetail(false);categoryPage.classList.remove('open','page-ready');categoryPage.setAttribute('aria-hidden','true');document.body.style.overflow='';if(location.hash.startsWith('#kategori/')||location.hash.startsWith('#urun/'))history.pushState({},'',location.pathname+location.search);}
 document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('click',e=>{
   if(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
   e.preventDefault();
   openCategory(x.dataset.category);
 }));
 document.querySelector('.category-page-close')?.addEventListener('click',closeCategory);
-window.addEventListener('popstate',()=>{if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1],false);else{closeCategory();closeModal();}});
+window.addEventListener('popstate',async()=>{
+  await managedProductsReady;
+  if(location.hash.startsWith('#urun/')){openProductDetailById(productIdFromHash(),{push:false,ensureCategory:true});return}
+  closeProductDetail(false);
+  if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1],false);
+  else{closeCategory();closeModal();}
+});
 
 /* Admin panelindeki ürünleri tek kaynak olarak kullanır. */
 managedProductsReady=(async()=>{
@@ -232,10 +398,14 @@ managedProductsReady=(async()=>{
     managedProducts=Array.isArray(data)?data:[];
     renderManagedProducts();
     if('requestIdleCallback' in window)requestIdleCallback(warmCategoryCovers,{timeout:2200});else setTimeout(warmCategoryCovers,1200);
-    if(location.hash.startsWith('#kategori/')) openCategory(location.hash.split('/')[1],false);
   }catch(e){console.warn('Yönetim ürünleri yüklenemedi.',e);managedProducts=[];renderManagedProducts();}
   return managedProducts;
 })();
+
+managedProductsReady.then(()=>{
+  if(location.hash.startsWith('#kategori/'))openCategory(location.hash.split('/')[1],false);
+  else if(location.hash.startsWith('#urun/'))openProductDetailById(productIdFromHash(),{push:false,ensureCategory:true});
+});
 
 /* Yönetim ürün galerileri: ok, nokta ve mobil kaydırma. */
 (function initManagedGalleries(){

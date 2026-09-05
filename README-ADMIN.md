@@ -11,7 +11,12 @@
 8. Yönetim paneli: `http://localhost:3000/admin`
 
 ## Nasıl kullanılır?
-Admin paneline şifrenle gir. Ürün adı, kategori, fiyat ve fotoğrafı doldurup kaydet. Ürün ana sitede otomatik görünür.
+Admin paneline şifrenle gir. Ürün adı, kategori, fiyat ve fotoğrafları doldurup kaydet. Ürün ana sitede otomatik görünür.
+
+- Fotoğrafları seçtikten sonra ön izlemedeki istediğin fotoğrafa tıklayıp kapak yapabilirsin.
+- Daha önce eklenen bir ürünün kapağını, “Eklediğin ürünler” alanındaki küçük fotoğraflardan değiştirebilirsin.
+- Açıklama alanının altındaki hazır metinler seçilen kategoriye göre değişir. Bir metne tıkladığında açıklama alanına otomatik yazılır; kaydetmeden önce istediğin gibi düzenleyebilirsin.
+- Müşteri ürün kartına tıkladığında ürün detay vitrini açılır. Vitrinde fotoğraf değiştirme, tam ekran büyütme, WhatsApp ve ürün bağlantısını paylaşma seçenekleri bulunur.
 
 ## Önemli
 Bu sürüm gerçek bir sunucu/backend ile çalışacak şekilde hazırlandı. Sadece `index.html` dosyasını yüklemek yeterli değildir; Node.js sunucusunun ve `storage/` klasörünün kalıcı depolamada çalışması gerekir. Railway Volume bağlı kalmalıdır. Volume farklı bir konuma bağlandıysa Railway değişkenlerine `STORAGE_DIR` ekleyip o konumu yaz.

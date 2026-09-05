@@ -64,7 +64,6 @@ const sendPublicFile = (fileName, cacheControl = "no-cache") => (_, res) => {
 app.get(["/", "/index.html"], sendPublicFile("index.html"));
 app.get("/style.css", sendPublicFile("style.css", "public, max-age=604800"));
 app.get("/script.js", sendPublicFile("script.js", "public, max-age=604800"));
-app.get("/quick-view.js", sendPublicFile("quick-view.js", "public, max-age=604800"));
 app.get("/consent.js", sendPublicFile("consent.js", "public, max-age=604800"));
 app.get("/favicon.ico", sendPublicFile("favicon.ico", "public, max-age=604800"));
 app.get("/favicon.png", (_, res) => {
@@ -239,7 +238,9 @@ function escapeHtml(value = "") {
 }
 
 function safeProductImage(product) {
-  const image = (Array.isArray(product.images) && product.images[0]) || product.image || "";
+  const images = (Array.isArray(product.images) && product.images.length ? product.images : [product.image]).filter(Boolean);
+  const coverIndex = Math.max(0, Math.min(images.length - 1, Number.parseInt(product.coverIndex, 10) || 0));
+  const image = (product.image && images.includes(product.image) ? product.image : images[coverIndex]) || images[0] || "";
   return /^\/(assets|uploads)\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(image) ? image : "/assets/optimized/mobilyum-corlu-og.jpg";
 }
 
@@ -250,10 +251,8 @@ function renderSeoProducts(category) {
     const description = escapeHtml(product.description || "Ölçü, renk ve teslimat bilgisi için ekibimize ulaşın.");
     const price = escapeHtml(product.price || "Fiyat için bilgi alın");
     const image = escapeHtml(safeProductImage(product));
-    const message = encodeURIComponent(`Merhaba Mobilyum, ${product.name || "bu ürün"} hakkında bilgi almak istiyorum.`);
-    const images = (Array.isArray(product.images) && product.images.length ? product.images : [product.image]).filter(Boolean);
-    const quickData = `data-quick-view="1" data-qv-name="${name}" data-qv-category="${escapeHtml(category)}" data-qv-type="${escapeHtml(product.type || category)}" data-qv-price="${price}" data-qv-old-price="${escapeHtml(product.oldPrice || "")}" data-qv-tag="${escapeHtml(product.tag || "")}" data-qv-description="${description}" data-qv-images="${escapeHtml(JSON.stringify(images))}"`;
-    return `<article class="product-card seo-product-card" id="model-${index + 1}" ${quickData}><div class="product-image"><img src="${image}" loading="lazy" decoding="async" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2>${name}</h2><span>${price}</span><small class="managed-desc">${description}</small><div class="product-card-actions"><a class="product-btn" href="https://wa.me/905446504459?text=${message}" target="_blank" rel="noopener noreferrer">WhatsApp'tan bilgi al ↗</a><button class="quick-view-open" type="button" aria-label="${name} ürününü hızlı incele">Hızlı incele <span aria-hidden="true">↗</span></button></div></div></article>`;
+    const detailUrl = `/#urun/${encodeURIComponent(String(product.id || ""))}`;
+    return `<article class="product-card seo-product-card" id="model-${index + 1}"><a class="seo-product-image-link" href="${detailUrl}" aria-label="${name} ürününü detaylı incele"><div class="product-image"><img src="${image}" loading="lazy" decoding="async" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div></a><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2><a href="${detailUrl}">${name}</a></h2><span>${price}</span><small class="managed-desc">${description}</small><a class="product-btn" href="${detailUrl}">Ürünü detaylı incele →</a></div></article>`;
   }).join("");
   return {
     products,
@@ -477,6 +476,9 @@ app.post("/api/products", auth, upload.array("images", 12), async (req, res) => 
     files = await optimizeUploadedFiles(files);
 
     const products = readProducts();
+    const imagePaths = files.map(file => `/uploads/${file.filename}`);
+    const requestedCover = Number.parseInt(req.body.coverIndex, 10);
+    const coverIndex = Number.isInteger(requestedCover) ? Math.max(0, Math.min(imagePaths.length - 1, requestedCover)) : 0;
     const product = {
     id: crypto.randomUUID(),
     name: name.trim(),
@@ -485,9 +487,10 @@ app.post("/api/products", auth, upload.array("images", 12), async (req, res) => 
     price: (price || "Fiyat için bilgi alın").trim(),
     oldPrice: (oldPrice || "").trim(),
     tag: (tag || "").trim(),
-    description: (description || "").trim(),
-    image: `/uploads/${files[0].filename}`,
-    images: files.map(file => `/uploads/${file.filename}`),
+    description: (description || "").trim().slice(0, 600),
+    image: imagePaths[coverIndex],
+    images: imagePaths,
+    coverIndex,
     createdAt: new Date().toISOString()
   };
     products.unshift(product);
@@ -498,6 +501,21 @@ app.post("/api/products", auth, upload.array("images", 12), async (req, res) => 
     console.error("Ürün kaydetme hatası:", err);
     res.status(500).json({ error: "Ürün kaydedilemedi. Sunucu depolama alanını kontrol et." });
   }
+});
+
+app.patch("/api/products/:id/cover", auth, (req, res) => {
+  const products = readProducts();
+  const product = products.find(item => item.id === req.params.id);
+  if (!product) return res.status(404).json({ error: "Ürün bulunamadı." });
+  const images = (Array.isArray(product.images) && product.images.length ? product.images : [product.image]).filter(Boolean);
+  const coverIndex = Number.parseInt(req.body.coverIndex, 10);
+  if (!Number.isInteger(coverIndex) || coverIndex < 0 || coverIndex >= images.length) {
+    return res.status(400).json({ error: "Geçerli bir kapak fotoğrafı seç." });
+  }
+  product.coverIndex = coverIndex;
+  product.image = images[coverIndex];
+  writeProducts(products);
+  res.json(product);
 });
 
 app.delete("/api/products/:id", auth, (req, res) => {
@@ -535,12 +553,14 @@ app.put("/api/products/:id", auth, upload.array("images", 12), async (req, res) 
       price: (req.body.price || old.price).trim(),
       oldPrice: (req.body.oldPrice || "").trim(),
       tag: (req.body.tag || "").trim(),
-      description: (req.body.description || "").trim()
+      description: (req.body.description || "").trim().slice(0, 600)
     };
     if (newFiles.length) {
       newFiles = await optimizeUploadedFiles(newFiles);
-      updated.image = `/uploads/${newFiles[0].filename}`;
       updated.images = newFiles.map(file => `/uploads/${file.filename}`);
+      const requestedCover = Number.parseInt(req.body.coverIndex, 10);
+      updated.coverIndex = Number.isInteger(requestedCover) ? Math.max(0, Math.min(updated.images.length - 1, requestedCover)) : 0;
+      updated.image = updated.images[updated.coverIndex];
     }
     products[i] = updated;
     writeProducts(products);

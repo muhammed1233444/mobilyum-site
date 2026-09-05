@@ -1,6 +1,59 @@
 let adminPassword = sessionStorage.getItem("mobilyum_admin_password") || "";
 const $=s=>document.querySelector(s);
 const login=$('#login'), panel=$('#panel'), loginMsg=$('#loginMsg');
+const descriptionInput=$('#descriptionInput');
+const descriptionCount=$('#descriptionCount');
+const descriptionTemplates=$('#descriptionTemplates');
+const categoryInput=document.querySelector('[name="category"]');
+let selectedCoverIndex=0;
+let previewObjectUrls=[];
+
+const DESCRIPTION_TEMPLATES={
+  "Yatak Odaları":[
+    {label:"Modern ve şık",text:"Modern çizgileri ve dengeli tasarımıyla yatak odanıza şık, düzenli ve huzurlu bir görünüm kazandırır. Takım içeriği, ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Takım uyumu",text:"Birbiriyle uyumlu parçaları sayesinde yatak odanızda bütünlüklü ve ferah bir atmosfer oluşturur. Ürünün ölçüleri, takım içeriği ve teslimat seçenekleri için bizimle iletişime geçebilirsiniz."},
+    {label:"Zamansız tasarım",text:"Zamansız tasarım anlayışını kullanışlı detaylarla bir araya getiren bu model, farklı dekorasyon tarzlarına kolayca uyum sağlar. Renk, ölçü, fiyat ve stok bilgisi mağazamızdan alınabilir."}
+  ],
+  "Oturma Grupları":[
+    {label:"Konfor odaklı",text:"Konforlu oturum hissi ve dengeli tasarımıyla salonunuzda keyifli bir yaşam alanı oluşturur. Kumaş, renk, ölçü ve takım içeriği seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Modern salon",text:"Modern çizgileriyle salonunuza güçlü ve şık bir karakter kazandıran bu model, günlük yaşamın farklı ihtiyaçlarına uyum sağlar. Güncel fiyat, renk ve teslimat bilgisi için bizimle iletişime geçebilirsiniz."},
+    {label:"Sade ve zamansız",text:"Sade detayları ve zamansız görünümüyle farklı salon düzenlerine kolayca uyum sağlar. Kumaş seçeneklerini, takım içeriğini ve ölçü bilgilerini mağazamızda birlikte değerlendirebilirsiniz."}
+  ],
+  "Yemek Odaları":[
+    {label:"Şık sofralar",text:"Uyumlu takım parçaları ve zarif tasarımıyla sofralarınıza sıcak ve şık bir atmosfer katar. Masa, sandalye, konsol içeriği ile ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Modern yemek alanı",text:"Modern görünümüyle yemek alanınızı sade, düzenli ve bütünlüklü bir şekilde tamamlar. Takım içeriği, ölçüler, güncel fiyat ve teslimat seçenekleri için bizimle iletişime geçebilirsiniz."},
+    {label:"Zamansız uyum",text:"Zamansız çizgileri sayesinde farklı dekorasyon stilleriyle kolayca uyum sağlayan bu model, yemek alanınıza dengeli bir görünüm kazandırır. Detaylı ürün bilgisi mağazamızdan alınabilir."}
+  ],
+  "Genç Odaları":[
+    {label:"Kullanışlı alan",text:"Çalışma, dinlenme ve düzen ihtiyaçlarını bir araya getiren kullanışlı tasarımıyla genç odalarına uyum sağlar. Takım içeriği, ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Modern genç odası",text:"Modern ve dinamik çizgileriyle gençlerin yaşam alanına ferah bir görünüm kazandırır. Ürün içeriği, ölçüler, renk seçenekleri ve teslimat bilgisi için bizimle iletişime geçebilirsiniz."},
+    {label:"Düzenli ve ferah",text:"Dengeli tasarımıyla odadaki alanı verimli kullanmaya ve düzenli bir atmosfer oluşturmaya yardımcı olur. Takım içeriğini ve ölçü seçeneklerini mağazamızda birlikte değerlendirebilirsiniz."}
+  ],
+  "Diğer":[
+    {label:"Genel ürün metni",text:"Evinize uyum sağlayan tasarımı ve kullanışlı detaylarıyla yaşam alanınızı tamamlar. Ölçü, renk, fiyat, stok ve teslimat seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Premium görünüm",text:"Zarif detayları ve dengeli tasarımıyla yaşam alanınıza güçlü ve şık bir görünüm kazandırır. Ürünün seçenekleri ve güncel fiyat bilgisi için bizimle iletişime geçebilirsiniz."}
+  ]
+};
+
+function updateDescriptionCount(){if(descriptionCount)descriptionCount.textContent=`${descriptionInput?.value.length||0} / 600`}
+function renderDescriptionTemplates(){
+  if(!descriptionTemplates)return;
+  descriptionTemplates.innerHTML="";
+  const templates=DESCRIPTION_TEMPLATES[categoryInput?.value]||DESCRIPTION_TEMPLATES.Diğer;
+  templates.forEach(template=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="description-template";
+    button.textContent=template.label;
+    button.title="Bu metni açıklama alanına yaz";
+    button.onclick=()=>{descriptionInput.value=template.text;updateDescriptionCount();descriptionInput.focus()};
+    descriptionTemplates.append(button);
+  });
+}
+descriptionInput?.addEventListener("input",updateDescriptionCount);
+categoryInput?.addEventListener("change",renderDescriptionTemplates);
+renderDescriptionTemplates();
+updateDescriptionCount();
 
 async function api(url, options={}) {
   options.headers = options.headers || {};
@@ -52,21 +105,40 @@ $("#exportDataBtn").onclick=async()=>{
   }catch(error){msg.textContent=error.message||"Yedek indirilemedi."}
 };
 
+function clearPreviewUrls(){previewObjectUrls.forEach(url=>URL.revokeObjectURL(url));previewObjectUrls=[]}
+function selectCoverPreview(index){
+  selectedCoverIndex=index;
+  document.querySelectorAll("#imagePreview .preview-item").forEach((item,i)=>{
+    const active=i===selectedCoverIndex;
+    item.classList.toggle("is-cover",active);
+    item.setAttribute("aria-pressed",String(active));
+    item.querySelector("span").textContent=active?"Kapak":"Kapak yap";
+  });
+}
+
 $("#imageInput").onchange=e=>{
   const box=$("#imagePreview");
+  clearPreviewUrls();
   box.innerHTML="";
   const files=Array.from(e.target.files||[]).slice(0,12);
+  selectedCoverIndex=0;
   files.forEach((file,i)=>{
-    const wrap=document.createElement("div");
+    const wrap=document.createElement("button");
+    wrap.type="button";
     wrap.className="preview-item";
+    wrap.setAttribute("aria-label",`${i+1}. fotoğrafı kapak yap`);
+    wrap.onclick=()=>selectCoverPreview(i);
     const img=document.createElement("img");
-    img.src=URL.createObjectURL(file);
+    const url=URL.createObjectURL(file);
+    previewObjectUrls.push(url);
+    img.src=url;
     img.alt=`Fotoğraf ${i+1}`;
     const label=document.createElement("span");
-    label.textContent=i===0?"Kapak":String(i+1);
+    label.textContent=i===0?"Kapak":"Kapak yap";
     wrap.append(img,label);
     box.append(wrap);
   });
+  selectCoverPreview(0);
 };
 
 async function optimizeImage(file) {
@@ -99,13 +171,18 @@ $("#productForm").onsubmit=async e=>{
     }
     const files=Array.from(document.querySelector("#imageInput").files||[]).slice(0,12);
     if (!files.length) throw new Error("En az 1 fotoğraf seç.");
+    fd.append("coverIndex",String(Math.min(selectedCoverIndex,files.length-1)));
     for (const file of files) {
       const optimized = await optimizeImage(file);
       fd.append("images", optimized, optimized.name);
     }
     const saved=await api("/api/products",{method:"POST",body:fd});
     e.target.reset();
+    clearPreviewUrls();
+    selectedCoverIndex=0;
     document.querySelector("#imagePreview").innerHTML="";
+    renderDescriptionTemplates();
+    updateDescriptionCount();
     msg.textContent=`Ürün başarıyla eklendi (${Array.isArray(saved.images)?saved.images.length:1} fotoğraf).`;
     await loadProducts();
   }catch(err){msg.textContent=err.message||"Ürün kaydedilemedi."}
@@ -116,12 +193,23 @@ async function loadProducts(){
   if(!items.length){box.innerHTML="<p>Henüz yönetim panelinden ürün eklenmedi.</p>";return}
   box.innerHTML=items.map(p=>{
     const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];
-    const thumbs=imgs.filter(Boolean).slice(0,12).map((src,i)=>`<img src="${escapeHtml(src)}" alt="Fotoğraf ${i+1}">`).join("");
+    const cover=(p.image&&imgs.includes(p.image)?p.image:imgs[Number(p.coverIndex)||0])||imgs[0];
+    const thumbs=imgs.filter(Boolean).slice(0,12).map((src,i)=>`<button type="button" class="item-cover${src===cover?' is-cover':''}" data-id="${escapeHtml(p.id)}" data-index="${i}" aria-pressed="${src===cover?'true':'false'}" title="${src===cover?'Mevcut kapak':'Bu fotoğrafı kapak yap'}"><img src="${escapeHtml(src)}" alt="Fotoğraf ${i+1}"><span>${src===cover?'Kapak':'Kapak yap'}</span></button>`).join("");
     return `<article class="item">
       <div class="item-images">${thumbs}</div>
       <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${escapeHtml(p.price)}</p><small>${imgs.length} fotoğraf</small>
       <button class="delete" data-id="${p.id}">Ürünü sil</button></div></article>`;
   }).join("");
+  box.querySelectorAll(".item-cover").forEach(button=>button.onclick=async()=>{
+    if(button.getAttribute("aria-pressed")==="true")return;
+    const original=button.querySelector("span").textContent;
+    button.disabled=true;
+    button.querySelector("span").textContent="Kaydediliyor";
+    try{
+      await api(`/api/products/${encodeURIComponent(button.dataset.id)}/cover`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({coverIndex:Number(button.dataset.index)})});
+      await loadProducts();
+    }catch(error){button.disabled=false;button.querySelector("span").textContent=original;alert(error.message)}
+  });
   box.querySelectorAll(".delete").forEach(b=>b.onclick=async()=>{
     if(!confirm("Bu ürünü silmek istediğine emin misin?"))return;
     try{await api("/api/products/"+b.dataset.id,{method:"DELETE"});loadProducts()}catch(e){alert(e.message)}

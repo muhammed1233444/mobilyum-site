@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin.css?v=20260905-final-v10-2">
 </head>
 <body>
 <div class="shell">
@@ -37,12 +37,17 @@
           <label>Fiyat<input name="price" placeholder="Fiyat için bilgi alın"></label>
           <label>Eski fiyat<input name="oldPrice" placeholder="İsteğe bağlı"></label>
           <label>Etiket<input name="tag" placeholder="Yeni / Premium / Öne Çıkan"></label>
-          <label class="full">Açıklama<textarea name="description" placeholder="Kısa ürün açıklaması"></textarea></label>
-          <label class="full">Ürün fotoğrafları*
+          <div class="full description-field"><label for="descriptionInput">Açıklama</label>
+            <textarea id="descriptionInput" name="description" maxlength="600" placeholder="Kısa ürün açıklaması"></textarea>
+            <span class="description-meta"><small>Kategoriye uygun hazır bir metin seçebilir veya kendin yazabilirsin.</small><b id="descriptionCount">0 / 600</b></span>
+            <span class="description-title">HAZIR AÇIKLAMALAR · TIKLAYINCA ALANA YAZILIR</span>
+            <span id="descriptionTemplates" class="description-templates"></span>
+          </div>
+          <div class="full upload-field"><label for="imageInput">Ürün fotoğrafları*</label>
             <input id="imageInput" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required>
-            <small>En fazla 12 fotoğraf. İlk seçtiğin fotoğraf kapak fotoğrafı olur.</small>
+            <small>En fazla 12 fotoğraf. Ön izleme içinden istediğin fotoğrafa tıklayıp kapak yapabilirsin.</small>
             <div id="imagePreview" class="image-preview"></div>
-          </label>
+          </div>
         </div>
         <button class="save" type="submit">Ürünü kaydet</button>
         <div id="formMsg" class="msg"></div>
@@ -50,7 +55,7 @@
     </section>
 
     <section class="card">
-      <div class="card-head"><div><h2>Eklediğin ürünler</h2><p>Buradan ürünleri silebilirsin.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
+      <div class="card-head"><div><h2>Eklediğin ürünler</h2><p>Küçük fotoğrafa tıklayarak ürünün kapak fotoğrafını değiştirebilirsin.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
       <div id="products" class="products"></div>
     </section>
 
@@ -79,6 +84,6 @@
     </section>
   </main>
 </div>
-<script src="admin.js"></script>
+<script src="admin.js?v=20260905-final-v10-2"></script>
 </body>
 </html>
