@@ -255,4 +255,115 @@ function loadAll(){
 }
 
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+
+/* V10.4 · Dosya adı gerektirmeyen akıllı toplu ürün ekleme */
+const bulkInput=$("#bulkImageInput");
+const bulkWorkspace=$("#bulkWorkspace");
+const bulkPool=$("#bulkPhotoPool");
+const bulkGroupsBox=$("#bulkGroups");
+const bulkGroupButton=$("#bulkGroupBtn");
+const bulkPublishButton=$("#bulkPublishBtn");
+const bulkMessage=$("#bulkMsg");
+let bulkPhotos=[];
+let bulkGroups=[];
+let bulkSelected=new Set();
+let bulkGroupSequence=0;
+
+const bulkTypeForCategory=category=>({
+  "Yatak Odaları":"Yatak Odası Takımı","Oturma Grupları":"Koltuk Takımı",
+  "Yemek Odaları":"Yemek Odası Takımı","Genç Odaları":"Genç Odası Takımı","Diğer":"Mobilya"
+}[category]||"Mobilya");
+const bulkDefaultDescription=category=>(DESCRIPTION_TEMPLATES[category]||DESCRIPTION_TEMPLATES.Diğer)[0].text;
+
+function updateBulkSummary(){
+  $("#bulkSelectionCount").textContent=bulkSelected.size;
+  $("#bulkGroupCount").textContent=`${bulkGroups.length} ürün`;
+  bulkGroupButton.disabled=!bulkSelected.size||bulkSelected.size>12;
+  bulkPublishButton.disabled=!bulkGroups.length;
+  if(bulkSelected.size>12)bulkMessage.textContent="Bir üründe en fazla 12 fotoğraf olabilir. Daha az fotoğraf seç.";
+  else if(bulkMessage.textContent.startsWith("Bir üründe"))bulkMessage.textContent="";
+}
+
+function renderBulkPool(){
+  const grouped=new Set(bulkGroups.flatMap(group=>group.photos.map(photo=>photo.id)));
+  const available=bulkPhotos.filter(photo=>!grouped.has(photo.id));
+  bulkPool.innerHTML=available.map(photo=>`<button class="bulk-photo${bulkSelected.has(photo.id)?' is-selected':''}" type="button" data-bulk-photo="${photo.id}" aria-pressed="${bulkSelected.has(photo.id)}"><img src="${photo.url}" alt="Seçilen ürün fotoğrafı"><span>${bulkSelected.has(photo.id)?'✓':'+'}</span></button>`).join("");
+  if(!available.length&&bulkPhotos.length)bulkPool.innerHTML='<p>Bütün fotoğraflar ürünlere ayrıldı. İstersen aşağıdaki kartlardan fotoğrafları geri çıkarabilirsin.</p>';
+  bulkPool.querySelectorAll("[data-bulk-photo]").forEach(button=>button.onclick=()=>{
+    const id=Number(button.dataset.bulkPhoto);
+    bulkSelected.has(id)?bulkSelected.delete(id):bulkSelected.add(id);
+    renderBulkPool();updateBulkSummary();
+  });
+}
+
+function renderBulkGroups(){
+  bulkGroupsBox.innerHTML=bulkGroups.map((group,index)=>`<article class="bulk-group" data-bulk-group="${group.id}">
+    <div class="bulk-group-top"><div class="bulk-group-images">${group.photos.map((photo,photoIndex)=>`<button type="button" class="bulk-group-image${photoIndex===group.coverIndex?' is-cover':''}" data-cover="${photoIndex}" title="Kapak fotoğrafı yap"><img src="${photo.url}" alt="${index+1}. ürün fotoğrafı"><span>${photoIndex===group.coverIndex?'Kapak':'Kapak yap'}</span></button>`).join("")}</div>
+    <div class="bulk-group-fields"><input data-field="name" value="${escapeHtml(group.name)}" placeholder="Ürün adı*" aria-label="Ürün adı"><select data-field="category" aria-label="Kategori">${Object.keys(DESCRIPTION_TEMPLATES).map(category=>`<option${category===group.category?' selected':''}>${escapeHtml(category)}</option>`).join("")}</select><input data-field="price" value="${escapeHtml(group.price)}" placeholder="Fiyat için bilgi alın" aria-label="Fiyat"><input data-field="tag" value="${escapeHtml(group.tag)}" placeholder="Etiket (isteğe bağlı)" aria-label="Etiket"></div></div>
+    <div class="bulk-group-actions"><small>${group.photos.length} fotoğraf · ${index+1}. ürün</small><button class="bulk-remove" type="button">Grubu geri al</button></div></article>`).join("");
+  bulkGroupsBox.querySelectorAll("[data-bulk-group]").forEach(article=>{
+    const group=bulkGroups.find(item=>item.id===Number(article.dataset.bulkGroup));
+    article.querySelectorAll("[data-field]").forEach(field=>field.oninput=()=>{group[field.dataset.field]=field.value});
+    article.querySelector('[data-field="category"]').onchange=e=>{group.category=e.target.value;group.description=bulkDefaultDescription(group.category)};
+    article.querySelectorAll("[data-cover]").forEach(button=>button.onclick=()=>{group.coverIndex=Number(button.dataset.cover);renderBulkGroups()});
+    article.querySelector(".bulk-remove").onclick=()=>{bulkGroups=bulkGroups.filter(item=>item.id!==group.id);renderBulkPool();renderBulkGroups();updateBulkSummary()};
+  });
+}
+
+bulkInput?.addEventListener("change",event=>{
+  const incoming=Array.from(event.target.files||[]).filter(file=>file.type.startsWith("image/"));
+  incoming.forEach(file=>bulkPhotos.push({id:Date.now()+(bulkPhotos.length*10)+Math.random(),file,url:URL.createObjectURL(file)}));
+  event.target.value="";
+  if(bulkPhotos.length){bulkWorkspace.hidden=false;bulkMessage.textContent=`${incoming.length} fotoğraf hazır. Aynı ürüne ait fotoğraflara dokun.`}
+  renderBulkPool();updateBulkSummary();
+});
+
+bulkGroupButton?.addEventListener("click",()=>{
+  const photos=bulkPhotos.filter(photo=>bulkSelected.has(photo.id));
+  if(!photos.length||photos.length>12)return;
+  bulkGroupSequence+=1;
+  const category="Yatak Odaları";
+  bulkGroups.push({id:bulkGroupSequence,photos,coverIndex:0,name:"",category,price:"Fiyat için bilgi alın",tag:"",description:bulkDefaultDescription(category)});
+  bulkSelected=new Set();
+  renderBulkPool();renderBulkGroups();updateBulkSummary();
+  bulkGroupsBox.lastElementChild?.scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+
+function resetBulkWorkspace({confirmFirst=true}={}){
+  if(confirmFirst&&(bulkPhotos.length||bulkGroups.length)&&!confirm("Hazırlanan toplu ürünleri temizlemek istediğine emin misin?"))return;
+  bulkPhotos.forEach(photo=>URL.revokeObjectURL(photo.url));
+  bulkPhotos=[];bulkGroups=[];bulkSelected=new Set();bulkGroupSequence=0;
+  bulkWorkspace.hidden=true;bulkPool.innerHTML="";bulkGroupsBox.innerHTML="";bulkMessage.textContent="";updateBulkSummary();
+}
+$("#bulkResetBtn")?.addEventListener("click",()=>resetBulkWorkspace());
+
+bulkPublishButton?.addEventListener("click",async()=>{
+  const missing=bulkGroups.findIndex(group=>!group.name.trim());
+  if(missing>=0){bulkMessage.textContent=`${missing+1}. ürünün adını yazmalısın.`;bulkGroupsBox.children[missing]?.querySelector('[data-field="name"]')?.focus();return}
+  bulkPublishButton.disabled=true;
+  const originalText=bulkPublishButton.textContent;
+  const published=[];
+  try{
+    for(let index=0;index<bulkGroups.length;index+=1){
+      const group=bulkGroups[index];
+      bulkPublishButton.textContent=`Yayınlanıyor: ${index+1} / ${bulkGroups.length}`;
+      bulkMessage.innerHTML=`Fotoğraflar hazırlanıyor…<div class="bulk-progress"><i style="width:${Math.round(index/bulkGroups.length*100)}%"></i></div>`;
+      const fd=new FormData();
+      fd.append("name",group.name.trim());fd.append("category",group.category);fd.append("type",bulkTypeForCategory(group.category));
+      fd.append("price",group.price||"Fiyat için bilgi alın");fd.append("tag",group.tag||"");fd.append("description",group.description||bulkDefaultDescription(group.category));fd.append("coverIndex",String(group.coverIndex));
+      for(const photo of group.photos){const optimized=await optimizeImage(photo.file);fd.append("images",optimized,optimized.name)}
+      await api("/api/products",{method:"POST",body:fd});published.push(group.id);
+    }
+    bulkMessage.textContent=`${published.length} ürün başarıyla yayınlandı.`;
+    await loadProducts();
+    setTimeout(()=>resetBulkWorkspace({confirmFirst:false}),1400);
+  }catch(error){
+    const publishedPhotoIds=new Set(bulkGroups.filter(group=>published.includes(group.id)).flatMap(group=>group.photos.map(photo=>photo.id)));
+    bulkPhotos.filter(photo=>publishedPhotoIds.has(photo.id)).forEach(photo=>URL.revokeObjectURL(photo.url));
+    bulkPhotos=bulkPhotos.filter(photo=>!publishedPhotoIds.has(photo.id));
+    bulkGroups=bulkGroups.filter(group=>!published.includes(group.id));
+    renderBulkPool();renderBulkGroups();
+    bulkMessage.textContent=`${published.length} ürün yayınlandı. Kalanlarda işlem durdu: ${error.message}`;
+  }finally{bulkPublishButton.textContent=originalText;updateBulkSummary()}
+});
 check();

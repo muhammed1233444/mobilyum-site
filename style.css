@@ -1194,3 +1194,5 @@ body.product-detail-opened{overflow:hidden}
 @media(max-width:900px) and (orientation:landscape){
   .product-detail-stage{aspect-ratio:16/9;max-height:76vh}
 }
+/* Mobil kenardan geri kaydırma geri bildirimi */
+@media(max-width:900px){html.edge-swipe-active::after{content:'←  Geri';position:fixed;left:10px;top:50%;z-index:100000;transform:translateY(-50%);padding:9px 12px;border-radius:999px;background:rgba(31,28,24,.88);color:#fff;font:700 11px Arial,sans-serif;letter-spacing:.08em;pointer-events:none;box-shadow:0 6px 20px rgba(0,0,0,.2)}}

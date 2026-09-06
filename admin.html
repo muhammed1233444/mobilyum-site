@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="stylesheet" href="admin.css?v=20260905-final-v10-3">
+<link rel="stylesheet" href="admin.css?v=20260906-final-v10-4">
 </head>
 <body>
 <div class="shell">
@@ -19,6 +19,25 @@
   </section>
 
   <main id="panel" hidden>
+    <section class="card bulk-card">
+      <div class="card-head"><div><small class="feature-kicker">YENİ · HIZLI SİSTEM</small><h2>Akıllı toplu ürün ekle</h2><p>Bütün fotoğrafları seç; aynı ürüne ait olanlara dokunup tek kartta grupla.</p></div><button id="bulkResetBtn" class="ghost" type="button">Temizle</button></div>
+      <div class="bulk-start">
+        <label class="bulk-file-button" for="bulkImageInput"><b>Fotoğrafları seç</b><span>Telefondan veya bilgisayardan aynı anda seçebilirsin</span></label>
+        <input id="bulkImageInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
+      </div>
+      <div id="bulkWorkspace" hidden>
+        <div class="bulk-toolbar">
+          <p><b id="bulkSelectionCount">0</b> fotoğraf seçili</p>
+          <button id="bulkGroupBtn" type="button" disabled>Seçilenlerden ürün oluştur</button>
+        </div>
+        <div id="bulkPhotoPool" class="bulk-photo-pool" aria-label="Henüz gruplandırılmamış fotoğraflar"></div>
+        <div class="bulk-groups-head"><div><h3>Hazırlanan ürünler</h3><p>Kapak yapmak istediğin fotoğrafa dokun. Kartları yayınlamadan önce kontrol et.</p></div><span id="bulkGroupCount">0 ürün</span></div>
+        <div id="bulkGroups" class="bulk-groups"></div>
+        <button id="bulkPublishBtn" class="save bulk-publish" type="button" disabled>Hazırlanan ürünlerin tümünü yayınla</button>
+        <div id="bulkMsg" class="msg" aria-live="polite"></div>
+      </div>
+    </section>
+
     <section class="card">
       <div class="card-head"><div><h2>Yeni ürün ekle</h2><p>Fotoğrafı seç, bilgileri doldur ve kaydet.</p></div><button id="logoutBtn" class="ghost">Çıkış</button></div>
       <form id="productForm">
@@ -84,6 +103,6 @@
     </section>
   </main>
 </div>
-<script src="admin.js?v=20260905-final-v10-3"></script>
+<script src="admin.js?v=20260906-final-v10-4"></script>
 </body>
 </html>

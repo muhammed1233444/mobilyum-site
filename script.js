@@ -413,6 +413,36 @@ document.querySelectorAll('[data-category]').forEach(x=>x.addEventListener('clic
   openCategory(x.dataset.category);
 }));
 document.querySelector('.category-page-close')?.addEventListener('click',closeCategory);
+
+/* Mobilde sol kenardan sağa kaydırarak bir önceki ekrana dön. Yalnızca ekranın
+   ilk 28 pikselinden başlayan hareketi dinlediği için ürün galerisiyle karışmaz. */
+(function initEdgeSwipeBack(){
+  if(!('ontouchstart' in window))return;
+  let startX=null,startY=null,lastX=null,lastY=null,tracking=false;
+  const reset=()=>{startX=startY=lastX=lastY=null;tracking=false;document.documentElement.classList.remove('edge-swipe-active')};
+  document.addEventListener('touchstart',event=>{
+    if(event.touches.length!==1||event.touches[0].clientX>28)return reset();
+    if(!productDetail?.classList.contains('open')&&!categoryPage?.classList.contains('open'))return reset();
+    startX=lastX=event.touches[0].clientX;startY=lastY=event.touches[0].clientY;tracking=true;
+  },{passive:true});
+  document.addEventListener('touchmove',event=>{
+    if(!tracking||event.touches.length!==1)return;
+    lastX=event.touches[0].clientX;lastY=event.touches[0].clientY;
+    const dx=lastX-startX,dy=Math.abs(lastY-startY);
+    if(dy>Math.max(36,dx*.65))return reset();
+    if(dx>38)document.documentElement.classList.add('edge-swipe-active');
+  },{passive:true});
+  document.addEventListener('touchend',()=>{
+    if(!tracking)return reset();
+    const dx=(lastX??startX)-startX,dy=Math.abs((lastY??startY)-startY);
+    const valid=dx>=88&&dy<=Math.max(55,dx*.55);
+    reset();
+    if(!valid)return;
+    if(productDetail?.classList.contains('open'))closeProductDetail(true);
+    else if(categoryPage?.classList.contains('open'))closeCategory();
+  },{passive:true});
+  document.addEventListener('touchcancel',reset,{passive:true});
+})();
 window.addEventListener('popstate',async()=>{
   await managedProductsReady;
   if(location.hash.startsWith('#urun/')){openProductDetailById(productIdFromHash(),{push:false,ensureCategory:true});return}
