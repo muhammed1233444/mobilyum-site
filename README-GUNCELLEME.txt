@@ -8,6 +8,21 @@ MOBİLYUM ÜRÜN SİSTEMİ GÜNCELLEMESİ
 - Mevcut data/products.json içindeki yönetim ürünleri korunur.
 
 GitHub'a bu ZIP'i güncelleme olarak yüklerken mevcut assets/, data/ ve uploads/ klasörlerini silme.
+V10.5.2 ACİL GİRİŞ DÜZELTMESİ
+-----------------------------
+- Kapalı ürün düzenleme penceresinin şeffaf biçimde giriş ekranının üzerinde kalması düzeltildi.
+- Düzenleme penceresi kapalıyken artık hiçbir alanı veya tıklamayı yakalamaz.
+- Şifre alanına normal şekilde yazılabilir; görünmez kategori seçimi açılmaz.
+- Ana site, SEO, performans ve ürün verileri değiştirilmedi.
+
+V10.5.1 DÜZELTMESİ
+------------------
+- Yönetici girişi gerçek form yapısına alındı; buton ve Enter tuşu ile güvenilir giriş sağlandı.
+- Şifre alanında tarayıcının eski ürün adlarını önermesini engelleyen otomatik doldurma ayarları eklendi.
+- Bütün kategori klasörleri başlangıçta kapalıdır.
+- Kategori kutusuna basınca yalnız o klasörün ürünleri açılır; tekrar basınca kapanır.
+- Ana site, SEO, ürün optimizasyonu ve mobil performans dosyaları değiştirilmedi.
+
 V10.5 YENİLİKLERİ
 ------------------
 - Admin ürün listesi kategori klasörlerine ayrıldı; her klasör ürün sayısını gösterir.
