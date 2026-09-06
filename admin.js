@@ -12,41 +12,82 @@ const DESCRIPTION_TEMPLATES={
   "Yatak Odaları":[
     {label:"Modern ve şık",text:"Modern çizgileri ve dengeli tasarımıyla yatak odanıza şık, düzenli ve huzurlu bir görünüm kazandırır. Takım içeriği, ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
     {label:"Takım uyumu",text:"Birbiriyle uyumlu parçaları sayesinde yatak odanızda bütünlüklü ve ferah bir atmosfer oluşturur. Ürünün ölçüleri, takım içeriği ve teslimat seçenekleri için bizimle iletişime geçebilirsiniz."},
-    {label:"Zamansız tasarım",text:"Zamansız tasarım anlayışını kullanışlı detaylarla bir araya getiren bu model, farklı dekorasyon tarzlarına kolayca uyum sağlar. Renk, ölçü, fiyat ve stok bilgisi mağazamızdan alınabilir."}
+    {label:"Zamansız tasarım",text:"Zamansız tasarım anlayışını kullanışlı detaylarla bir araya getiren bu model, farklı dekorasyon tarzlarına kolayca uyum sağlar. Renk, ölçü, fiyat ve stok bilgisi mağazamızdan alınabilir."},
+    {label:"Ferah ve düzenli",text:"Fonksiyonel depolama alanları ve ferah görünümüyle yatak odanızda düzenli bir yaşam alanı oluşturur. Takım içeriği, ölçüler ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
+    {label:"Premium yatak odası",text:"Özenli detayları ve güçlü duruşuyla yatak odanıza premium bir atmosfer kazandırır. Modelin takım içeriği, güncel fiyatı ve teslimat seçenekleri için bizimle iletişime geçebilirsiniz."}
   ],
   "Oturma Grupları":[
     {label:"Konfor odaklı",text:"Konforlu oturum hissi ve dengeli tasarımıyla salonunuzda keyifli bir yaşam alanı oluşturur. Kumaş, renk, ölçü ve takım içeriği seçenekleri için mağazamızdan bilgi alabilirsiniz."},
     {label:"Modern salon",text:"Modern çizgileriyle salonunuza güçlü ve şık bir karakter kazandıran bu model, günlük yaşamın farklı ihtiyaçlarına uyum sağlar. Güncel fiyat, renk ve teslimat bilgisi için bizimle iletişime geçebilirsiniz."},
-    {label:"Sade ve zamansız",text:"Sade detayları ve zamansız görünümüyle farklı salon düzenlerine kolayca uyum sağlar. Kumaş seçeneklerini, takım içeriğini ve ölçü bilgilerini mağazamızda birlikte değerlendirebilirsiniz."}
+    {label:"Sade ve zamansız",text:"Sade detayları ve zamansız görünümüyle farklı salon düzenlerine kolayca uyum sağlar. Kumaş seçeneklerini, takım içeriğini ve ölçü bilgilerini mağazamızda birlikte değerlendirebilirsiniz."},
+    {label:"Aile konforu",text:"Geniş ve konforlu oturum yapısıyla günlük kullanımdan misafir ağırlamaya kadar salonunuzun farklı ihtiyaçlarına uyum sağlar. Kumaş, renk ve takım seçenekleri için bilgi alabilirsiniz."},
+    {label:"Premium oturum",text:"Şık dikiş detayları, dengeli formu ve konforlu yapısıyla salonunuza seçkin bir görünüm kazandırır. Güncel fiyat, ölçü, renk ve teslimat bilgisi mağazamızdan alınabilir."}
   ],
   "Yemek Odaları":[
     {label:"Şık sofralar",text:"Uyumlu takım parçaları ve zarif tasarımıyla sofralarınıza sıcak ve şık bir atmosfer katar. Masa, sandalye, konsol içeriği ile ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
     {label:"Modern yemek alanı",text:"Modern görünümüyle yemek alanınızı sade, düzenli ve bütünlüklü bir şekilde tamamlar. Takım içeriği, ölçüler, güncel fiyat ve teslimat seçenekleri için bizimle iletişime geçebilirsiniz."},
-    {label:"Zamansız uyum",text:"Zamansız çizgileri sayesinde farklı dekorasyon stilleriyle kolayca uyum sağlayan bu model, yemek alanınıza dengeli bir görünüm kazandırır. Detaylı ürün bilgisi mağazamızdan alınabilir."}
+    {label:"Zamansız uyum",text:"Zamansız çizgileri sayesinde farklı dekorasyon stilleriyle kolayca uyum sağlayan bu model, yemek alanınıza dengeli bir görünüm kazandırır. Detaylı ürün bilgisi mağazamızdan alınabilir."},
+    {label:"Davet sofraları",text:"Aileniz ve misafirleriniz için sıcak bir buluşma alanı oluşturan bu takım, şıklık ile kullanışlılığı bir araya getirir. Takım içeriği ve masa ölçüleri için bilgi alabilirsiniz."},
+    {label:"Premium yemek odası",text:"Zarif yüzey detayları ve bütünlüklü tasarımıyla yemek alanınıza premium bir görünüm kazandırır. Renk, ölçü, fiyat ve teslimat seçenekleri için mağazamıza ulaşabilirsiniz."}
   ],
   "Genç Odaları":[
     {label:"Kullanışlı alan",text:"Çalışma, dinlenme ve düzen ihtiyaçlarını bir araya getiren kullanışlı tasarımıyla genç odalarına uyum sağlar. Takım içeriği, ölçü ve renk seçenekleri için mağazamızdan bilgi alabilirsiniz."},
     {label:"Modern genç odası",text:"Modern ve dinamik çizgileriyle gençlerin yaşam alanına ferah bir görünüm kazandırır. Ürün içeriği, ölçüler, renk seçenekleri ve teslimat bilgisi için bizimle iletişime geçebilirsiniz."},
-    {label:"Düzenli ve ferah",text:"Dengeli tasarımıyla odadaki alanı verimli kullanmaya ve düzenli bir atmosfer oluşturmaya yardımcı olur. Takım içeriğini ve ölçü seçeneklerini mağazamızda birlikte değerlendirebilirsiniz."}
+    {label:"Düzenli ve ferah",text:"Dengeli tasarımıyla odadaki alanı verimli kullanmaya ve düzenli bir atmosfer oluşturmaya yardımcı olur. Takım içeriğini ve ölçü seçeneklerini mağazamızda birlikte değerlendirebilirsiniz."},
+    {label:"Çalışma ve dinlenme",text:"Çalışma, dinlenme ve depolama alanlarını uyumlu biçimde bir araya getirerek gençler için konforlu ve düzenli bir oda oluşturur. Takım seçenekleri için bilgi alabilirsiniz."},
+    {label:"Uzun yıllar kullanım",text:"Sade çizgileri ve kullanışlı parçalarıyla farklı yaş dönemlerine uyum sağlayan uzun ömürlü bir genç odası seçeneğidir. Ölçü, renk ve takım içeriği mağazamızdan öğrenilebilir."}
   ],
   "Diğer":[
     {label:"Genel ürün metni",text:"Evinize uyum sağlayan tasarımı ve kullanışlı detaylarıyla yaşam alanınızı tamamlar. Ölçü, renk, fiyat, stok ve teslimat seçenekleri için mağazamızdan bilgi alabilirsiniz."},
-    {label:"Premium görünüm",text:"Zarif detayları ve dengeli tasarımıyla yaşam alanınıza güçlü ve şık bir görünüm kazandırır. Ürünün seçenekleri ve güncel fiyat bilgisi için bizimle iletişime geçebilirsiniz."}
+    {label:"Premium görünüm",text:"Zarif detayları ve dengeli tasarımıyla yaşam alanınıza güçlü ve şık bir görünüm kazandırır. Ürünün seçenekleri ve güncel fiyat bilgisi için bizimle iletişime geçebilirsiniz."},
+    {label:"Dayanıklı seçim",text:"Sağlam yapısı ve kullanışlı tasarımıyla evinizde uzun yıllar keyifle kullanabileceğiniz bir seçenektir. Ölçü, renk, stok ve teslimat bilgisi için mağazamıza ulaşabilirsiniz."},
+    {label:"Evinize uyumlu",text:"Dengeli ölçüleri ve sade görünümüyle farklı yaşam alanlarına kolayca uyum sağlar. Ürünün seçeneklerini ve güncel fiyat bilgisini mağazamızda birlikte değerlendirebiliriz."}
   ]
 };
 
+const withMdf=text=>`${String(text||"").trim()} Ürünümüz %100 MDF malzemeden üretilmiştir.`.slice(0,600);
+const CATEGORY_DESCRIPTION_PARTS={
+  "Yatak Odaları":{product:"Bu yatak odası takımı",space:"yatak odanıza",details:"takım içeriği, ölçü, renk ve teslimat seçenekleri"},
+  "Oturma Grupları":{product:"Bu oturma grubu",space:"salonunuza",details:"kumaş, renk, ölçü ve takım seçenekleri"},
+  "Yemek Odaları":{product:"Bu yemek odası takımı",space:"yemek alanınıza",details:"masa ölçüsü, sandalye, konsol ve renk seçenekleri"},
+  "Genç Odaları":{product:"Bu genç odası takımı",space:"genç odanıza",details:"takım içeriği, ölçü, renk ve depolama seçenekleri"},
+  "Diğer":{product:"Bu ürün",space:"yaşam alanınıza",details:"ölçü, renk, stok ve teslimat seçenekleri"}
+};
+const EXTRA_DESCRIPTION_STYLES=[
+  ["Minimal çizgiler",p=>`${p.product}, minimal çizgileri ve sade detaylarıyla ${p.space} ferah ve modern bir görünüm kazandırır. ${p.details} için mağazamızdan bilgi alabilirsiniz.`],
+  ["Güçlü duruş",p=>`${p.product}, dengeli oranları ve güçlü tasarım diliyle ${p.space} karakterli bir atmosfer katar. ${p.details} mağazamızda birlikte değerlendirilebilir.`],
+  ["Sıcak atmosfer",p=>`${p.product}, sıcak tonları ve uyumlu detaylarıyla ${p.space} huzurlu ve davetkâr bir hava kazandırır. Güncel fiyat ile ${p.details} için bize ulaşabilirsiniz.`],
+  ["Fonksiyonel tasarım",p=>`${p.product}, şık görünümünü günlük kullanımı kolaylaştıran fonksiyonel ayrıntılarla tamamlar. ${p.details} hakkında mağazamızdan bilgi alabilirsiniz.`],
+  ["Modern yaşam",p=>`${p.product}, modern yaşam alanlarının ihtiyaçlarına uyum sağlayan kullanışlı ve estetik bir seçenektir. ${p.details} için bizimle iletişime geçebilirsiniz.`],
+  ["Zarif detaylar",p=>`${p.product}, zarif yüzeyleri ve özenli detayları sayesinde ${p.space} seçkin bir görünüm kazandırır. Fiyat, stok ve ${p.details} mağazamızdan öğrenilebilir.`],
+  ["Doğal görünüm",p=>`${p.product}, doğal tonları ve yalın tasarımıyla farklı dekorasyon stillerine kolayca uyum sağlar. ${p.details} için mağazamıza bekleriz.`],
+  ["Şehirli stil",p=>`${p.product}, çağdaş çizgileriyle şehirli ve dinamik bir dekorasyon anlayışını ${p.space} taşır. Güncel fiyat ve ${p.details} için bilgi alabilirsiniz.`],
+  ["Dengeli uyum",p=>`${p.product}, birbiriyle uyumlu parçaları ve dengeli formuyla ${p.space} bütünlüklü bir görünüm verir. ${p.details} için ekibimize ulaşabilirsiniz.`],
+  ["Konfor ve şıklık",p=>`${p.product}, konforu şık bir tasarım anlayışıyla buluşturarak günlük yaşamınıza değer katar. ${p.details} mağazamızda birlikte belirlenebilir.`],
+  ["Yeni sezon",p=>`${p.product}, yeni sezonun sade ve güçlü çizgilerini kullanışlı detaylarla bir araya getirir. Güncel fiyat, stok ve ${p.details} için bizimle iletişime geçebilirsiniz.`],
+  ["Gösterişli tasarım",p=>`${p.product}, dikkat çekici detayları ve özenli formuyla ${p.space} gösterişli fakat dengeli bir atmosfer kazandırır. ${p.details} için bilgi alabilirsiniz.`],
+  ["Kompakt çözüm",p=>`${p.product}, alanı verimli kullanmaya yardımcı olan ölçüleri ve işlevsel yapısıyla kompakt yaşam alanlarına uyum sağlar. ${p.details} mağazamızdan öğrenilebilir.`],
+  ["Geniş alanlar",p=>`${p.product}, güçlü hacmi ve tamamlayıcı parçalarıyla geniş yaşam alanlarında etkileyici bir bütünlük oluşturur. ${p.details} için bize ulaşabilirsiniz.`],
+  ["Uzun ömürlü",p=>`${p.product}, zamana dirençli görünümü ve sağlam yapısıyla uzun yıllar keyifle kullanabileceğiniz bir seçenektir. ${p.details} için mağazamızdan bilgi alabilirsiniz.`],
+  ["Mobilyum seçimi",p=>`${p.product}, Mobilyum'un kalite, estetik ve kullanışlılık anlayışını ${p.space} taşır. Güncel fiyat, stok ve ${p.details} için Çorlu mağazamıza bekleriz.`]
+];
+function getDescriptionTemplates(category){
+  const base=DESCRIPTION_TEMPLATES[category]||DESCRIPTION_TEMPLATES.Diğer;
+  const parts=CATEGORY_DESCRIPTION_PARTS[category]||CATEGORY_DESCRIPTION_PARTS.Diğer;
+  return [...base,...EXTRA_DESCRIPTION_STYLES.slice(0,Math.max(0,20-base.length)).map(([label,makeText])=>({label,text:makeText(parts)}))];
+}
 function updateDescriptionCount(){if(descriptionCount)descriptionCount.textContent=`${descriptionInput?.value.length||0} / 600`}
 function renderDescriptionTemplates(){
   if(!descriptionTemplates)return;
   descriptionTemplates.innerHTML="";
-  const templates=DESCRIPTION_TEMPLATES[categoryInput?.value]||DESCRIPTION_TEMPLATES.Diğer;
+  const templates=getDescriptionTemplates(categoryInput?.value);
   templates.forEach(template=>{
     const button=document.createElement("button");
     button.type="button";
     button.className="description-template";
     button.textContent=template.label;
     button.title="Bu metni açıklama alanına yaz";
-    button.onclick=()=>{descriptionInput.value=template.text;updateDescriptionCount();descriptionInput.focus()};
+    button.onclick=()=>{descriptionInput.value=withMdf(template.text);updateDescriptionCount();descriptionInput.focus()};
     descriptionTemplates.append(button);
   });
 }
@@ -191,15 +232,19 @@ async function loadProducts(){
   const items=await api("/api/products");
   const box=$("#products");
   if(!items.length){box.innerHTML="<p>Henüz yönetim panelinden ürün eklenmedi.</p>";return}
-  box.innerHTML=items.map(p=>{
+  const categoryOrder=["Yatak Odaları","Oturma Grupları","Yemek Odaları","Genç Odaları","Diğer"];
+  const grouped=new Map();
+  items.forEach(product=>{const key=categoryOrder.includes(product.category)?product.category:"Diğer";if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(product)});
+  const productHtml=p=>{
     const imgs=Array.isArray(p.images)&&p.images.length?p.images:[p.image];
     const cover=(p.image&&imgs.includes(p.image)?p.image:imgs[Number(p.coverIndex)||0])||imgs[0];
     const thumbs=imgs.filter(Boolean).slice(0,12).map((src,i)=>`<button type="button" class="item-cover${src===cover?' is-cover':''}" data-id="${escapeHtml(p.id)}" data-index="${i}" aria-pressed="${src===cover?'true':'false'}" title="${src===cover?'Mevcut kapak':'Bu fotoğrafı kapak yap'}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" fetchpriority="low" alt="Fotoğraf ${i+1}"><span>${src===cover?'Kapak':'Kapak yap'}</span></button>`).join("");
     return `<article class="item">
       <div class="item-images">${thumbs}</div>
       <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${escapeHtml(p.price)}</p><small>${imgs.length} fotoğraf</small>
-      <button class="delete" data-id="${p.id}">Ürünü sil</button></div></article>`;
-  }).join("");
+      <div class="item-actions"><button class="edit-product" data-id="${escapeHtml(p.id)}" type="button">Düzenle</button><button class="delete" data-id="${escapeHtml(p.id)}" type="button">Ürünü sil</button></div></div></article>`;
+  };
+  box.innerHTML=categoryOrder.filter(category=>grouped.has(category)).map((category,index)=>`<details class="product-folder"${index===0?' open':''}><summary><span><b>${escapeHtml(category)}</b><small>${grouped.get(category).length} ürün</small></span><i aria-hidden="true">⌄</i></summary><div class="product-folder-grid">${grouped.get(category).map(productHtml).join("")}</div></details>`).join("");
   box.querySelectorAll(".item-cover").forEach(button=>button.onclick=async()=>{
     if(button.getAttribute("aria-pressed")==="true")return;
     const original=button.querySelector("span").textContent;
@@ -214,7 +259,65 @@ async function loadProducts(){
     if(!confirm("Bu ürünü silmek istediğine emin misin?"))return;
     try{await api("/api/products/"+b.dataset.id,{method:"DELETE"});loadProducts()}catch(e){alert(e.message)}
   });
+  box.querySelectorAll(".edit-product").forEach(button=>button.onclick=()=>openEditProduct(items.find(item=>String(item.id)===String(button.dataset.id))));
 }
+
+const editModal=$("#editProductModal");
+const editForm=$("#editProductForm");
+const editImageInput=$("#editImageInput");
+let editProduct=null;
+let editCoverIndex=0;
+let editPreviewUrls=[];
+
+function renderEditTemplates(){
+  const box=$("#editDescriptionTemplates");
+  if(!box||!editForm)return;
+  const category=editForm.elements.category.value;
+  box.innerHTML="";
+  getDescriptionTemplates(category).forEach(template=>{
+    const button=document.createElement("button");button.type="button";button.className="description-template";button.textContent=template.label;
+    button.onclick=()=>{editForm.elements.description.value=withMdf(template.text);editForm.elements.description.focus()};box.append(button);
+  });
+}
+function renderEditCurrentImages(){
+  const box=$("#editCurrentImages");if(!box||!editProduct)return;
+  const images=(Array.isArray(editProduct.images)&&editProduct.images.length?editProduct.images:[editProduct.image]).filter(Boolean);
+  box.innerHTML=images.map((src,index)=>`<button type="button" class="preview-item${index===editCoverIndex?' is-cover':''}" data-edit-cover="${index}"><img src="${escapeHtml(src)}" loading="lazy" decoding="async" alt="Mevcut fotoğraf ${index+1}"><span>${index===editCoverIndex?'Kapak':'Kapak yap'}</span></button>`).join("");
+  box.querySelectorAll("[data-edit-cover]").forEach(button=>button.onclick=()=>{editCoverIndex=Number(button.dataset.editCover);renderEditCurrentImages()});
+}
+function openEditProduct(product){
+  if(!product||!editModal||!editForm)return;
+  editProduct=product;editCoverIndex=Math.max(0,Number(product.coverIndex)||0);
+  ["id","name","category","type","price","oldPrice","tag","description"].forEach(name=>{if(editForm.elements[name])editForm.elements[name].value=product[name]||""});
+  editImageInput.value="";editPreviewUrls.forEach(URL.revokeObjectURL);editPreviewUrls=[];$("#editNewImages").innerHTML="";$("#editMsg").textContent="";
+  renderEditCurrentImages();renderEditTemplates();editModal.hidden=false;document.body.classList.add("edit-open");
+  requestAnimationFrame(()=>editModal.classList.add("open"));
+}
+function closeEditProduct(){
+  if(!editModal)return;editModal.classList.remove("open");document.body.classList.remove("edit-open");editPreviewUrls.forEach(URL.revokeObjectURL);editPreviewUrls=[];
+  setTimeout(()=>{if(!editModal.classList.contains("open"))editModal.hidden=true},220);
+}
+document.querySelectorAll("[data-edit-close]").forEach(button=>button.addEventListener("click",closeEditProduct));
+editForm?.elements.category.addEventListener("change",renderEditTemplates);
+editImageInput?.addEventListener("change",event=>{
+  editPreviewUrls.forEach(URL.revokeObjectURL);editPreviewUrls=[];editCoverIndex=0;
+  const files=Array.from(event.target.files||[]).slice(0,12);const box=$("#editNewImages");
+  box.innerHTML=files.map((file,index)=>{const url=URL.createObjectURL(file);editPreviewUrls.push(url);return `<button type="button" class="preview-item${index===0?' is-cover':''}" data-edit-new-cover="${index}"><img src="${url}" alt="Yeni fotoğraf ${index+1}"><span>${index===0?'Kapak':'Kapak yap'}</span></button>`}).join("");
+  box.querySelectorAll("[data-edit-new-cover]").forEach(button=>button.onclick=()=>{editCoverIndex=Number(button.dataset.editNewCover);box.querySelectorAll("[data-edit-new-cover]").forEach(item=>{const active=Number(item.dataset.editNewCover)===editCoverIndex;item.classList.toggle("is-cover",active);item.querySelector("span").textContent=active?"Kapak":"Kapak yap"})});
+});
+editForm?.addEventListener("submit",async event=>{
+  event.preventDefault();if(!editProduct)return;
+  const msg=$("#editMsg");const submit=editForm.querySelector('[type="submit"]');submit.disabled=true;msg.textContent="Değişiklikler kaydediliyor…";
+  try{
+    const newFiles=Array.from(editImageInput.files||[]).slice(0,12);const fd=new FormData();
+    ["name","category","type","price","oldPrice","tag","description"].forEach(name=>fd.append(name,editForm.elements[name].value));
+    fd.append("coverIndex",String(editCoverIndex));
+    for(const file of newFiles){const optimized=await optimizeImage(file);fd.append("images",optimized,optimized.name)}
+    await api(`/api/products/${encodeURIComponent(editProduct.id)}`,{method:"PUT",body:fd});
+    if(!newFiles.length&&editCoverIndex!==(Number(editProduct.coverIndex)||0))await api(`/api/products/${encodeURIComponent(editProduct.id)}/cover`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({coverIndex:editCoverIndex})});
+    msg.textContent="Ürün başarıyla güncellendi.";await loadProducts();setTimeout(closeEditProduct,650);
+  }catch(error){msg.textContent=error.message||"Ürün güncellenemedi."}finally{submit.disabled=false}
+});
 
 const formatNumber=value=>new Intl.NumberFormat("tr-TR").format(Number(value||0));
 const pageNames={
@@ -273,7 +376,7 @@ const bulkTypeForCategory=category=>({
   "Yatak Odaları":"Yatak Odası Takımı","Oturma Grupları":"Koltuk Takımı",
   "Yemek Odaları":"Yemek Odası Takımı","Genç Odaları":"Genç Odası Takımı","Diğer":"Mobilya"
 }[category]||"Mobilya");
-const bulkDefaultDescription=category=>(DESCRIPTION_TEMPLATES[category]||DESCRIPTION_TEMPLATES.Diğer)[0].text;
+const bulkDefaultDescription=category=>withMdf(getDescriptionTemplates(category)[0].text);
 
 function updateBulkSummary(){
   $("#bulkSelectionCount").textContent=bulkSelected.size;

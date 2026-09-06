@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="stylesheet" href="admin.css?v=20260906-final-v10-4">
+<link rel="stylesheet" href="admin.css?v=20260906-final-v10-5">
 </head>
 <body>
 <div class="shell">
@@ -74,7 +74,7 @@
     </section>
 
     <section class="card">
-      <div class="card-head"><div><h2>Eklediğin ürünler</h2><p>Küçük fotoğrafa tıklayarak ürünün kapak fotoğrafını değiştirebilirsin.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
+      <div class="card-head"><div><h2>Ürün klasörleri</h2><p>Kategoriyi aç, ürünü bul; kapak fotoğrafını değiştir veya ürün bilgilerini düzenle.</p></div><button id="refreshBtn" class="ghost">Yenile</button></div>
       <div id="products" class="products"></div>
     </section>
 
@@ -103,6 +103,29 @@
     </section>
   </main>
 </div>
-<script src="admin.js?v=20260906-final-v10-4"></script>
+
+<div id="editProductModal" class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="editProductTitle" hidden>
+  <div class="edit-modal-backdrop" data-edit-close></div>
+  <section class="edit-modal-box">
+    <div class="card-head"><div><small class="feature-kicker">ÜRÜN DÜZENLE</small><h2 id="editProductTitle">Ürün bilgileri</h2><p>Değiştirmek istediğin alanları güncelle ve kaydet.</p></div><button class="edit-close ghost" type="button" data-edit-close>×</button></div>
+    <form id="editProductForm">
+      <input name="id" type="hidden">
+      <div class="grid">
+        <label>Ürün adı*<input name="name" required></label>
+        <label>Kategori*<select name="category" required><option>Yatak Odaları</option><option>Oturma Grupları</option><option>Yemek Odaları</option><option>Genç Odaları</option><option>Diğer</option></select></label>
+        <label>Ürün türü<input name="type"></label><label>Fiyat<input name="price"></label>
+        <label>Eski fiyat<input name="oldPrice"></label><label>Etiket<input name="tag"></label>
+        <label class="full">Açıklama<textarea name="description" maxlength="600"></textarea></label>
+        <div class="full"><span class="description-title">HAZIR AÇIKLAMALAR</span><span id="editDescriptionTemplates" class="description-templates"></span></div>
+        <div class="full edit-images-info"><b>Mevcut fotoğraflar ve kapak seçimi</b><div id="editCurrentImages" class="image-preview"></div></div>
+        <label class="full">Fotoğrafları tamamen değiştir <small>Boş bırakırsan mevcut fotoğraflar korunur. Seçersen eski galeri yeni fotoğraflarla değiştirilir.</small><input id="editImageInput" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple></label>
+        <div id="editNewImages" class="full image-preview"></div>
+      </div>
+      <div class="edit-actions"><button class="ghost" type="button" data-edit-close>Vazgeç</button><button class="save" type="submit">Değişiklikleri kaydet</button></div>
+      <div id="editMsg" class="msg" aria-live="polite"></div>
+    </form>
+  </section>
+</div>
+<script src="admin.js?v=20260906-final-v10-5"></script>
 </body>
 </html>
