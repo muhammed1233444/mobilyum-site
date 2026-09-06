@@ -118,11 +118,14 @@ async function check(){
   try { await api("/api/admin/check"); login.hidden=true; panel.hidden=false; loadAll(); }
   catch { sessionStorage.removeItem("mobilyum_admin_password"); adminPassword=""; }
 }
-$("#loginBtn").onclick=async()=>{
+$("#loginForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  loginMsg.textContent="Giriş kontrol ediliyor…";
   adminPassword=$("#password").value;
-  try { await api("/api/admin/check"); sessionStorage.setItem("mobilyum_admin_password",adminPassword); login.hidden=true; panel.hidden=false; loadAll(); }
-  catch(e){ loginMsg.textContent=e.message; adminPassword=""; }
-};
+  if(!adminPassword){loginMsg.textContent="Yönetici şifresini yazmalısın.";return}
+  try { await api("/api/admin/check"); sessionStorage.setItem("mobilyum_admin_password",adminPassword); login.hidden=true; panel.hidden=false; loginMsg.textContent=""; loadAll(); }
+  catch(e){ loginMsg.textContent=e.message; adminPassword=""; $("#password").focus(); }
+});
 $("#logoutBtn").onclick=()=>{sessionStorage.removeItem("mobilyum_admin_password");location.reload()};
 $("#refreshBtn").onclick=loadProducts;
 $("#analyticsRefreshBtn").onclick=loadAnalytics;
@@ -244,7 +247,7 @@ async function loadProducts(){
       <div class="item-body"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category)} · ${escapeHtml(p.price)}</p><small>${imgs.length} fotoğraf</small>
       <div class="item-actions"><button class="edit-product" data-id="${escapeHtml(p.id)}" type="button">Düzenle</button><button class="delete" data-id="${escapeHtml(p.id)}" type="button">Ürünü sil</button></div></div></article>`;
   };
-  box.innerHTML=categoryOrder.filter(category=>grouped.has(category)).map((category,index)=>`<details class="product-folder"${index===0?' open':''}><summary><span><b>${escapeHtml(category)}</b><small>${grouped.get(category).length} ürün</small></span><i aria-hidden="true">⌄</i></summary><div class="product-folder-grid">${grouped.get(category).map(productHtml).join("")}</div></details>`).join("");
+  box.innerHTML=categoryOrder.filter(category=>grouped.has(category)).map(category=>`<details class="product-folder"><summary><span><b>${escapeHtml(category)}</b><small>${grouped.get(category).length} ürün</small></span><span class="folder-action"><b class="folder-show">Ürünleri göster</b><b class="folder-hide">Kapat</b><i aria-hidden="true">⌄</i></span></summary><div class="product-folder-grid">${grouped.get(category).map(productHtml).join("")}</div></details>`).join("");
   box.querySelectorAll(".item-cover").forEach(button=>button.onclick=async()=>{
     if(button.getAttribute("aria-pressed")==="true")return;
     const original=button.querySelector("span").textContent;

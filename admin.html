@@ -5,7 +5,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive">
 <title>Mobilyum · Ürün Yönetimi</title>
 <link rel="icon" type="image/png" href="/assets/favicon.png">
-<link rel="stylesheet" href="admin.css?v=20260906-final-v10-5">
+<link rel="stylesheet" href="admin.css?v=20260906-final-v10-5-1">
 </head>
 <body>
 <div class="shell">
@@ -14,7 +14,7 @@
   <section id="login" class="card">
     <h2>Yönetim paneli</h2>
     <p>Bu alan sadece mağaza yönetimi içindir.</p>
-    <div class="row"><input id="password" type="password" placeholder="Yönetici şifresi" aria-label="Yönetici şifresi" autocomplete="current-password"><button id="loginBtn" type="button">Giriş yap</button></div>
+    <form id="loginForm" class="row" autocomplete="off"><input id="password" name="mobilyum_yonetici_girisi" type="password" placeholder="Yönetici şifresi" aria-label="Yönetici şifresi" autocomplete="new-password" autocapitalize="none" spellcheck="false"><button id="loginBtn" type="submit">Giriş yap</button></form>
     <div id="loginMsg" class="msg"></div>
   </section>
 
@@ -126,6 +126,6 @@
     </form>
   </section>
 </div>
-<script src="admin.js?v=20260906-final-v10-5"></script>
+<script src="admin.js?v=20260906-final-v10-5-1"></script>
 </body>
 </html>
