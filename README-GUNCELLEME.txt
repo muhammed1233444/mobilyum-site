@@ -8,6 +8,13 @@ MOBİLYUM ÜRÜN SİSTEMİ GÜNCELLEMESİ
 - Mevcut data/products.json içindeki yönetim ürünleri korunur.
 
 GitHub'a bu ZIP'i güncelleme olarak yüklerken mevcut assets/, data/ ve uploads/ klasörlerini silme.
+V10.5.3 SAYFA YENİLEME DÜZELTMESİ
+---------------------------------
+- Ana sayfa yenilendiğinde tarayıcının eski kaydırma konumunu geri getirmesi engellendi.
+- Yenileme sonrası sayfa en üstten, kayan bilgilendirme şeridi görünür biçimde açılır.
+- Kategori ve ürün bağlantılarındaki geri/ileri geçmiş davranışı korunmuştur.
+- SEO, admin, ürün verileri ve görsel optimizasyonlar değiştirilmemiştir.
+
 V10.5.2 ACİL GİRİŞ DÜZELTMESİ
 -----------------------------
 - Kapalı ürün düzenleme penceresinin şeffaf biçimde giriş ekranının üzerinde kalması düzeltildi.
