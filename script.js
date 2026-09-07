@@ -86,7 +86,7 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
   let deltaX=0;
   let startY=0,deltaY=0;
   let dragging=false;
-  let inView=true,paused=false,hovered=false;
+  let inView=true,hovered=false;
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saveData=navigator.connection?.saveData===true;
   const loadSlide=slideIndex=>{
@@ -114,7 +114,7 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
     slides.forEach((s,i)=>s.classList.toggle('is-active',i===index));
     dots.querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('is-active',i===index);b.setAttribute('aria-current',String(i===index))});
   };
-  const restart=()=>{clearInterval(timer);if(!reducedMotion&&!document.hidden&&inView&&!paused&&!hovered&&!slider.contains(document.activeElement))timer=setInterval(()=>go(index+1),5500)};
+  const restart=()=>{clearInterval(timer);if(!reducedMotion&&!document.hidden&&inView&&!hovered&&!slider.contains(document.activeElement))timer=setInterval(()=>go(index+1),5500)};
   prev?.addEventListener('click',()=>{go(index-1);restart()});
   next?.addEventListener('click',()=>{go(index+1);restart()});
   slider.addEventListener('mouseenter',()=>{hovered=true;clearInterval(timer)});
@@ -122,9 +122,6 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
   slider.addEventListener('focusin',()=>clearInterval(timer));
   slider.addEventListener('focusout',()=>setTimeout(restart,0));
   if('IntersectionObserver' in window)new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;restart()},{threshold:0}).observe(slider);
-  const pauseButton=document.createElement('button');pauseButton.type='button';pauseButton.className='hero-slider-pause';
-  pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Slayt gösterisini duraklat');pauseButton.setAttribute('aria-pressed','false');slider.append(pauseButton);
-  pauseButton.addEventListener('click',()=>{paused=!paused;pauseButton.textContent=paused?'▷':'Ⅱ';pauseButton.setAttribute('aria-label',paused?'Slayt gösterisini oynat':'Slayt gösterisini duraklat');pauseButton.setAttribute('aria-pressed',String(paused));restart()});
   slider.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;deltaX=deltaY=0;dragging=true;clearInterval(timer)},{passive:true});
   slider.addEventListener('touchmove',e=>{if(e.touches.length!==1){dragging=false;return}if(!dragging)return;deltaX=e.touches[0].clientX-startX;deltaY=e.touches[0].clientY-startY},{passive:true});
   slider.addEventListener('touchend',()=>{if(!dragging){restart();return}dragging=false;if(Math.abs(deltaX)>45&&Math.abs(deltaX)>Math.abs(deltaY)*1.5)go(index+(deltaX<0?1:-1));restart()});

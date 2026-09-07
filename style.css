@@ -1207,8 +1207,6 @@ body.product-detail-opened{overflow:hidden}
 @media(prefers-reduced-motion:reduce){.marquee-track{animation:none!important}}
 
 /* Final catalogue polish: existing motion and brand colours stay intact. */
-.hero-slider-pause{position:absolute;right:16px;top:16px;z-index:6;display:grid;place-items:center;width:42px;height:42px;border:1px solid rgba(255,255,255,.5);border-radius:50%;background:rgba(30,26,22,.7);color:#fff;font:18px/1 Arial,sans-serif;cursor:pointer;transition:transform .25s ease,background .25s ease}
-.hero-slider-pause:hover{background:#30271f;transform:scale(1.06)}
 .catalog-photo-link{position:relative;display:block;overflow:hidden;background:#eee5da;border-radius:4px;isolation:isolate}
 .catalog-photo-link img{display:block;width:100%;height:100%;object-fit:contain;transition:transform .6s cubic-bezier(.2,.7,.2,1)}
 .catalog-photo-link>span{position:absolute;right:16px;bottom:16px;padding:10px 14px;border:1px solid rgba(255,255,255,.35);border-radius:24px;background:rgba(35,29,24,.82);color:#fff;font-size:13px;line-height:1.4;pointer-events:none}
@@ -1251,6 +1249,5 @@ body.product-detail-opened{overflow:hidden}
   .collection-nav{max-width:100%;scroll-padding-inline:16px;-webkit-overflow-scrolling:touch}
   .collection-nav a{min-height:44px;display:inline-flex;align-items:center;flex-shrink:0}
   .seo-landing-copy h1{overflow-wrap:anywhere}
-  .hero-slider-pause{top:12px;right:12px;width:44px;height:44px}
 }
-@media(prefers-reduced-motion:reduce){.catalog-lightbox[open]{animation:none}.catalog-photo-link img,.hero-slider-pause,.product-card{transition:none}}
+@media(prefers-reduced-motion:reduce){.catalog-lightbox[open]{animation:none}.catalog-photo-link img,.product-card{transition:none}}
