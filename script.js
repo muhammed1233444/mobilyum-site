@@ -10,6 +10,25 @@ addEventListener('scroll',()=>{if(!progressFrame)progressFrame=requestAnimationF
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}}),{threshold:.03,rootMargin:'0px 0px 80px 0px'});
 document.querySelectorAll('.reveal').forEach(e=>observer.observe(e));
 
+// Preserve every visible effect; pause only animations outside the viewport.
+if('IntersectionObserver' in window){
+  const motionRegions=new IntersectionObserver(entries=>entries.forEach(entry=>entry.target.classList.toggle('motion-paused',!entry.isIntersecting)),{rootMargin:'80px'});
+  document.querySelectorAll('.topbar,.hero').forEach(region=>motionRegions.observe(region));
+}
+
+// Keep keyboard navigation inside the topmost open overlay.
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Tab')return;
+  if(document.querySelector('.cookie-modal:not([hidden])'))return;
+  const layer=document.querySelector('.lightbox')||document.querySelector('.product-detail.open')||document.querySelector('.package-modal.open')||document.querySelector('.category-page.open');
+  if(!layer)return;
+  const items=[...layer.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),[tabindex="0"]')].filter(el=>el.getClientRects().length&&!el.hidden);
+  if(!items.length)return;
+  const first=items[0],last=items[items.length-1];
+  if(event.shiftKey&&(document.activeElement===first||!layer.contains(document.activeElement))){event.preventDefault();event.stopImmediatePropagation();last.focus()}
+  else if(!event.shiftKey&&(document.activeElement===last||!layer.contains(document.activeElement))){event.preventDefault();event.stopImmediatePropagation();first.focus()}
+},true);
+
 // Mağaza durumunu Türkiye saatine göre gösterir.
 (function initStoreStatus(){
   const statusNodes=[...document.querySelectorAll('[data-store-status]')];
@@ -65,7 +84,9 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
   let timer=null;
   let startX=0;
   let deltaX=0;
+  let startY=0,deltaY=0;
   let dragging=false;
+  let inView=true,paused=false,hovered=false;
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
   const saveData=navigator.connection?.saveData===true;
   const loadSlide=slideIndex=>{
@@ -83,6 +104,7 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
   };
   const renderDots=()=>{
     dots.innerHTML=slides.map((_,i)=>`<button class="hero-slider-dot${i===0?' is-active':''}" type="button" aria-label="${i+1}. fotoğraf"></button>`).join('');
+    dots.querySelectorAll('button').forEach((b,i)=>b.setAttribute('aria-current',String(i===index)));
     dots.querySelectorAll('button').forEach((b,i)=>b.addEventListener('click',()=>{go(i);restart()}));
   };
   const go=(to)=>{
@@ -90,16 +112,22 @@ const observeSmartImages=(root=document)=>root.querySelectorAll('img[data-smart-
     prepareAround(index);
     track.style.transform=`translate3d(${-index*100}%,0,0)`;
     slides.forEach((s,i)=>s.classList.toggle('is-active',i===index));
-    dots.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('is-active',i===index));
+    dots.querySelectorAll('button').forEach((b,i)=>{b.classList.toggle('is-active',i===index);b.setAttribute('aria-current',String(i===index))});
   };
-  const restart=()=>{clearInterval(timer);if(!reducedMotion&&!document.hidden)timer=setInterval(()=>go(index+1),5500)};
+  const restart=()=>{clearInterval(timer);if(!reducedMotion&&!document.hidden&&inView&&!paused&&!hovered&&!slider.contains(document.activeElement))timer=setInterval(()=>go(index+1),5500)};
   prev?.addEventListener('click',()=>{go(index-1);restart()});
   next?.addEventListener('click',()=>{go(index+1);restart()});
-  slider.addEventListener('mouseenter',()=>clearInterval(timer));
-  slider.addEventListener('mouseleave',restart);
-  slider.addEventListener('touchstart',e=>{startX=e.touches[0].clientX;deltaX=0;dragging=true;clearInterval(timer)},{passive:true});
-  slider.addEventListener('touchmove',e=>{if(!dragging)return;deltaX=e.touches[0].clientX-startX},{passive:true});
-  slider.addEventListener('touchend',()=>{if(!dragging)return;dragging=false;if(Math.abs(deltaX)>45)go(index+(deltaX<0?1:-1));restart()});
+  slider.addEventListener('mouseenter',()=>{hovered=true;clearInterval(timer)});
+  slider.addEventListener('mouseleave',()=>{hovered=false;restart()});
+  slider.addEventListener('focusin',()=>clearInterval(timer));
+  slider.addEventListener('focusout',()=>setTimeout(restart,0));
+  if('IntersectionObserver' in window)new IntersectionObserver(entries=>{inView=entries[0].isIntersecting;restart()},{threshold:0}).observe(slider);
+  const pauseButton=document.createElement('button');pauseButton.type='button';pauseButton.className='hero-slider-pause';
+  pauseButton.textContent='Ⅱ';pauseButton.setAttribute('aria-label','Slayt gösterisini duraklat');pauseButton.setAttribute('aria-pressed','false');slider.append(pauseButton);
+  pauseButton.addEventListener('click',()=>{paused=!paused;pauseButton.textContent=paused?'▷':'Ⅱ';pauseButton.setAttribute('aria-label',paused?'Slayt gösterisini oynat':'Slayt gösterisini duraklat');pauseButton.setAttribute('aria-pressed',String(paused));restart()});
+  slider.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;startX=e.touches[0].clientX;startY=e.touches[0].clientY;deltaX=deltaY=0;dragging=true;clearInterval(timer)},{passive:true});
+  slider.addEventListener('touchmove',e=>{if(e.touches.length!==1){dragging=false;return}if(!dragging)return;deltaX=e.touches[0].clientX-startX;deltaY=e.touches[0].clientY-startY},{passive:true});
+  slider.addEventListener('touchend',()=>{if(!dragging){restart();return}dragging=false;if(Math.abs(deltaX)>45&&Math.abs(deltaX)>Math.abs(deltaY)*1.5)go(index+(deltaX<0?1:-1));restart()});
   slider.addEventListener('touchcancel',()=>{dragging=false;restart()});
   document.addEventListener('visibilitychange',()=>document.hidden?clearInterval(timer):restart());
   renderDots();
@@ -192,7 +220,7 @@ function galleryHtml(p){
 function productCardHtml(p){
   return `<article class="product-card managed-product" data-product-id="${escapeHtml(p.id)}">
     ${galleryHtml(p)}
-    <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h4>${escapeHtml(p.name)}</h4>
+    <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h3><a href="/urun/${encodeURIComponent(p.id)}">${escapeHtml(p.name)}</a></h3>
     <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
     ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
     <button class="product-btn product-detail-open" type="button" data-product-id="${escapeHtml(p.id)}">Ürünü detaylı incele →</button></div>
@@ -267,7 +295,7 @@ function showProductDetail(product,{push=true}={}){
   price.textContent=product.price||'Fiyat için bilgi alın';
   oldPrice.textContent=product.oldPrice||'';
   oldPrice.hidden=!product.oldPrice;
-  const message=encodeURIComponent(`Merhaba Mobilyum, ${product.name||'bu ürün'} hakkında ölçü, renk, fiyat ve teslimat bilgisi almak istiyorum.`);
+  const message=encodeURIComponent(`Merhaba Mobilyum, ${product.name||'bu ürün'} hakkında ölçü, renk, fiyat ve teslimat bilgisi almak istiyorum. https://mobilyumcorlu.com/urun/${encodeURIComponent(product.id)}`);
   productDetail.querySelector('.product-detail-whatsapp').href=`https://wa.me/${whatsapp}?text=${message}`;
   renderDetailThumbs();
   productDetail.hidden=false;
@@ -323,8 +351,7 @@ productDetail?.querySelector('.product-detail-stage')?.addEventListener('touchst
 productDetail?.querySelector('.product-detail-stage')?.addEventListener('touchend',e=>{if(detailTouchStartX===null)return;const dx=(e.changedTouches[0]?.clientX??detailTouchStartX)-detailTouchStartX;detailTouchStartX=null;if(Math.abs(dx)>45)setDetailImage(detailImageIndex+(dx<0?1:-1))},{passive:true});
 detailShare?.addEventListener('click',async()=>{
   if(!activeDetailProduct)return;
-  const url=new URL(location.href);
-  url.hash=`urun/${encodeURIComponent(activeDetailProduct.id)}`;
+  const url=new URL(`/urun/${encodeURIComponent(activeDetailProduct.id)}`,location.origin);
   const original=detailShare.innerHTML;
   try{
     if(navigator.share)await navigator.share({title:`${activeDetailProduct.name} · Mobilyum Çorlu`,text:`${activeDetailProduct.name} modelini incele`,url:url.href});
@@ -392,7 +419,7 @@ function renderCategory(k){
   desc.textContent=activeCategoryProducts.length?`${d.desc} Toplam ${activeCategoryProducts.length} model.`:d.desc;
   categoryProducts.replaceChildren();
   if(!activeCategoryProducts.length){
-    categoryProducts.innerHTML='<div class="empty-products"><div><span>ŞU ANDA ÜRÜN YOK</span><h4>Yakında burada.</h4><p>Bu kategorideki ürünler mağaza yönetim panelinden eklenecek.</p></div></div>';
+    categoryProducts.innerHTML='<div class="empty-products"><div><span>MOBİLYUM KOLEKSİYONLARI</span><h4>Yeni modelleri birlikte keşfedelim.</h4><p>Güncel modeller, renkler ve ölçüler için bize WhatsApp üzerinden ulaşabilirsiniz.</p><a class="btn btn-dark" href="https://wa.me/905446504459" target="_blank" rel="noopener noreferrer">Güncel modelleri sor ↗</a></div></div>';
     return;
   }
   appendCategoryBatch();
@@ -459,8 +486,8 @@ managedProductsReady=(async()=>{
     const data=await res.json();
     managedProducts=Array.isArray(data)?data:[];
     renderManagedProducts();
-    if('requestIdleCallback' in window)requestIdleCallback(warmCategoryCovers,{timeout:2200});else setTimeout(warmCategoryCovers,1200);
-  }catch(e){console.warn('Yönetim ürünleri yüklenemedi.',e);managedProducts=[];renderManagedProducts();}
+    // Category covers are loaded on demand by the existing image observer.
+  }catch(e){console.warn('Yönetim ürünleri yüklenemedi.',e);managedProducts=[];if(managedContainer&&!managedContainer.children.length)managedContainer.innerHTML='<p>Ürünler şu anda yüklenemedi. <a href="/yemek-odasi">Koleksiyonları inceleyin</a> veya WhatsApp üzerinden bize ulaşın.</p>';}
   return managedProducts;
 })();
 

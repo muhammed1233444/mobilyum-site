@@ -134,15 +134,19 @@
   const settingsButton = document.querySelector(".cookie-settings-button");
   const toggle = document.getElementById("analytics-consent-toggle");
 
+  let settingsReturnFocus = null;
   const openSettings = () => {
+    settingsReturnFocus = document.activeElement;
     toggle.checked = readChoice() === "granted";
     modal.hidden = false;
     document.body.classList.add("cookie-modal-open");
     modal.querySelector(".cookie-modal-close")?.focus();
   };
   const closeSettings = () => {
+    const wasOpen = !modal.hidden;
     modal.hidden = true;
     document.body.classList.remove("cookie-modal-open");
+    if (wasOpen && settingsReturnFocus?.isConnected) settingsReturnFocus.focus({ preventScroll: true });
   };
   const applyChoice = value => {
     saveChoice(value);
@@ -172,7 +176,16 @@
     else if (href.includes("google.com/maps")) track("directions_click", { label });
     else if (/^\/(yatak-odasi|koltuk-takimlari|yemek-odasi|genc-odasi|dugun-paketi)/.test(href)) track("category_click", { label });
   });
-  document.addEventListener("keydown", event => { if (event.key === "Escape" && !modal.hidden) closeSettings(); });
+  document.addEventListener("keydown", event => {
+    if (modal.hidden) return;
+    if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); closeSettings(); }
+    if (event.key === "Tab") {
+      const nodes = [...modal.querySelectorAll('button,input,a[href]')].filter(node => node.getClientRects().length);
+      const first = nodes[0], last = nodes[nodes.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) { event.preventDefault(); first?.focus(); }
+    }
+  }, true);
 
   const storedChoice = readChoice();
   if (storedChoice === "granted") {

@@ -17,7 +17,7 @@ const ROOT = __dirname;
 const ASSET_DIR = path.join(ROOT, "assets");
 const BUNDLED_UPLOAD_DIR = path.join(ROOT, "uploads");
 const BUNDLED_DATA_FILE = path.join(ROOT, "data", "products.json");
-const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || path.join(ROOT, "storage"));
+const STORAGE_DIR = path.resolve(process.env.STORAGE_DIR || process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(ROOT, "storage"));
 const DATA_DIR = path.join(STORAGE_DIR, "data");
 const UPLOAD_DIR = path.join(STORAGE_DIR, "uploads");
 const DATA_FILE = path.join(DATA_DIR, "products.json");
@@ -61,9 +61,18 @@ const sendPublicFile = (fileName, cacheControl = "no-cache") => (_, res) => {
   res.setHeader("Cache-Control", cacheControl);
   res.sendFile(path.join(ROOT, fileName));
 };
-app.get(["/", "/index.html"], sendPublicFile("index.html"));
+app.get('/index.html', (req,res)=>res.redirect(301, '/' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '')));
+app.get("/", sendPublicFile("index.html"));
+app.use((req,res,next)=>{
+  if (req.method === 'GET' && req.path.length > 1 && req.path.endsWith('/')) {
+    const clean = req.path.replace(/\/+$/, '');
+    if (SEO_PAGES[clean] || clean.startsWith('/urun/')) return res.redirect(301, clean + req.url.slice(req.path.length));
+  }
+  next();
+});
 app.get("/style.css", sendPublicFile("style.css", "public, max-age=604800"));
 app.get("/script.js", sendPublicFile("script.js", "public, max-age=604800"));
+app.get("/catalog.js", sendPublicFile("catalog.js", "public, max-age=604800"));
 app.get("/consent.js", sendPublicFile("consent.js", "public, max-age=604800"));
 app.get("/favicon.ico", sendPublicFile("favicon.ico", "public, max-age=604800"));
 app.get("/favicon.png", (_, res) => {
@@ -261,6 +270,7 @@ function renderSitemap(_, res) {
   const products = readProducts();
   const pages = [
     { path: "/", priority: "1.0", changefreq: "weekly", images: ["/assets/optimized/mobilyum-corlu-og.jpg", "/assets/optimized/store.webp"] },
+    ...products.filter(p => p.id).map(p => ({ path: productPath(p), priority: "0.8", changefreq: "weekly", images: [safeProductImage(p)] })),
     ...Object.entries(SEO_PAGES)
       .filter(([, page]) => !String(page.robots || "").includes("noindex"))
       .map(([pagePath, page]) => ({
@@ -287,7 +297,7 @@ function renderSeoProducts(category) {
     const description = escapeHtml(product.description || "Ölçü, renk ve teslimat bilgisi için ekibimize ulaşın.");
     const price = escapeHtml(product.price || "Fiyat için bilgi alın");
     const image = escapeHtml(safeProductImage(product));
-    const detailUrl = `/#urun/${encodeURIComponent(String(product.id || ""))}`;
+    const detailUrl = productPath(product);
     return `<article class="product-card seo-product-card" id="model-${index + 1}"><a class="seo-product-image-link" href="${detailUrl}" aria-label="${name} ürününü detaylı incele"><div class="product-image"><img src="${image}" loading="lazy" decoding="async" fetchpriority="low" width="900" height="700" alt="${name} - Mobilyum Çorlu"></div></a><div class="product-info"><p>${escapeHtml(product.type || category)}</p><h2><a href="${detailUrl}">${name}</a></h2><span>${price}</span><small class="managed-desc">${description}</small><a class="product-btn" href="${detailUrl}">Ürünü detaylı incele →</a></div></article>`;
   }).join("");
   return {
@@ -331,14 +341,15 @@ function renderSeoPage(req, res) {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "FurnitureStore", "@id": "https://mobilyumcorlu.com/#store", name: "Mobilyum Çorlu", alternateName: ["Mobilyum", "Mobilyum Mobilya", "Mobilyum Çorlu Mobilya Mağazası"], slogan: "Evinize değer katar", url: "https://mobilyumcorlu.com/", telephone: "+90 544 650 44 59", contactPoint: { "@type": "ContactPoint", telephone: "+90 544 650 44 59", contactType: "customer service", areaServed: "TR", availableLanguage: "Turkish" }, logo: { "@type": "ImageObject", url: "https://mobilyumcorlu.com/favicon.png", width: 512, height: 512 }, image: ["https://mobilyumcorlu.com/assets/optimized/mobilyum-corlu-og.jpg", "https://mobilyumcorlu.com/assets/optimized/store.webp"], description: "Çorlu'da yatak odası, koltuk takımı, yemek odası ve genç odası seçenekleri sunan mobilya mağazası.", address: { "@type": "PostalAddress", streetAddress: "Reşadiye Mah. Şht. Teğmen Yavuzer Cad. No:53", addressLocality: "Çorlu", addressRegion: "Tekirdağ", postalCode: "59850", addressCountry: "TR" }, geo: { "@type": "GeoCoordinates", latitude: 41.1560299, longitude: 27.7987692 }, hasMap: "https://www.google.com/maps/search/?api=1&query=Mobilyum%20%C3%87orlu", areaServed: { "@type": "City", name: "Çorlu" }, priceRange: "$$", sameAs: ["https://www.instagram.com/mobilyumcorlu/"], openingHoursSpecification: [{ "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], opens: "09:00", closes: "20:00" }, { "@type": "OpeningHoursSpecification", dayOfWeek: "Sunday", opens: "12:00", closes: "19:00" }] },
-      { "@type": page.category ? "CollectionPage" : "WebPage", "@id": `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: "tr-TR", dateModified: latestContentDate(), about: { "@id": "https://mobilyumcorlu.com/#store" }, primaryImageOfPage: { "@type": "ImageObject", url: `https://mobilyumcorlu.com${page.heroImage}` } },
+      { "@type": page.category ? "CollectionPage" : (req.path === "/iletisim" ? "ContactPage" : req.path === "/hakkimizda" ? "AboutPage" : "WebPage"), "@id": `${canonical}#webpage`, url: canonical, name: page.title, description: page.description, inLanguage: "tr-TR", dateModified: latestContentDate(), about: { "@id": "https://mobilyumcorlu.com/#store" }, primaryImageOfPage: { "@type": "ImageObject", url: `https://mobilyumcorlu.com${page.heroImage}` } },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://mobilyumcorlu.com/" }, { "@type": "ListItem", position: 2, name: page.breadcrumb, item: canonical }] }
     ]
   };
   if (rendered.products.length) {
-    jsonLd["@graph"].push({ "@type": "ItemList", name: `${page.breadcrumb} modelleri`, itemListElement: rendered.products.map((product, index) => ({ "@type": "ListItem", position: index + 1, name: String(product.name || "Mobilyum modeli"), url: `${canonical}#model-${index + 1}` })) });
+    jsonLd["@graph"].push({ "@type": "ItemList", name: `${page.breadcrumb} modelleri`, itemListElement: rendered.products.map((product, index) => ({ "@type": "ListItem", position: index + 1, name: String(product.name || "Mobilyum modeli"), url: `https://mobilyumcorlu.com${productPath(product)}` })) });
   }
   const replacements = {
+    HERO_MEDIA: '<img src="'+escapeHtml(page.heroImage)+'" width="1200" height="900" fetchpriority="high" decoding="async" alt="'+escapeHtml(page.imageAlt)+'">',
     TITLE: escapeHtml(page.title), DESCRIPTION: escapeHtml(page.description), ROBOTS: page.robots || "index, follow, max-image-preview:large",
     CANONICAL: canonical, OG_IMAGE: `https://mobilyumcorlu.com${page.heroImage}`, HERO_IMAGE: page.heroImage,
     BREADCRUMB: escapeHtml(page.breadcrumb), H1: page.h1, LEAD: escapeHtml(page.lead), IMAGE_ALT: escapeHtml(page.imageAlt), PAGE_CLASS: escapeHtml(page.pageClass || (page.category ? "seo-page-category" : "")),
@@ -347,6 +358,37 @@ function renderSeoPage(req, res) {
   const html = SEO_PAGE_TEMPLATE.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_, key) => replacements[key] ?? "");
   res.setHeader("Cache-Control", "no-cache");
   res.send(html);
+}
+
+
+// Product pages are rendered on the server; the existing quick-view remains available.
+const HOME_TEMPLATE = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const HOME_GRAPH = JSON.parse(HOME_TEMPLATE.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
+function productPath(product) { return '/urun/' + encodeURIComponent(String(product.id)); }
+function renderProductPage(req,res) {
+  const p=readProducts().find(p=>String(p.id)===req.params.id);
+  if(!p) return res.status(404).set('X-Robots-Tag','noindex').send('Ürün bulunamadı. <a href="/">Ana sayfa</a>');
+  const canonical='https://mobilyumcorlu.com'+productPath(p);
+  const category=Object.entries(SEO_PAGES).find(([,page])=>page.category===p.category);
+  const name=String(p.name||'Mobilyum modeli');
+  const description=String(p.description||name+' modelini Mobilyum Çorlu mağazasında inceleyin. Ölçü, renk ve fiyat bilgisi için iletişime geçin.');
+  const image=safeProductImage(p);
+  const product={'@type':'Product','@id':canonical+'#product',name,description,category:p.category,image:'https://mobilyumcorlu.com'+image,url:canonical};
+  const priceMatch=String(p.price||'').trim().match(/^(?:₺\s*)?(\d{1,3}(?:\.\d{3})+|\d+)(,\d{1,2})?\s*(?:TL|TRY|₺)?$/i);
+  if(priceMatch){
+    const amount=Number(priceMatch[1].replace(/\./g,'')+(priceMatch[2]||'').replace(',','.'));
+    if(Number.isFinite(amount)&&amount>0)product.offers={'@type':'Offer',url:canonical,priceCurrency:'TRY',price:amount,seller:{'@id':'https://mobilyumcorlu.com/#store'}};
+  }
+  // Text-only catalogue prices never become fictitious offers or availability claims.
+  const graph={'@context':'https://schema.org','@graph':[
+    ...HOME_GRAPH['@graph'].filter(n=>n['@type']==='FurnitureStore'||n['@type']==='WebSite'),
+    {'@type':'WebPage','@id':canonical+'#webpage',url:canonical,name:name+' | Mobilyum Çorlu',inLanguage:'tr-TR',isPartOf:{'@id':'https://mobilyumcorlu.com/#website'},mainEntity:{'@id':canonical+'#product'}},product,
+    {'@type':'BreadcrumbList',itemListElement:[{name:'Ana Sayfa',item:'https://mobilyumcorlu.com/'},...(category?[{name:category[1].breadcrumb,item:'https://mobilyumcorlu.com'+category[0]}]:[]),{name,item:canonical}].map((x,i)=>({'@type':'ListItem',position:i+1,...x}))}
+  ]};
+  const images=[...new Set((Array.isArray(p.images)?p.images:[]).filter(src=>src!==image && /^\/(assets|uploads)\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(src)))];
+  const body='<section class="policy-content"><h2>Ürün bilgileri</h2><p>'+escapeHtml(p.type||p.category||'Mobilya')+'</p><p>'+escapeHtml(p.price||'Fiyat için bilgi alın')+'</p><p>Ölçü, renk, takım içeriği, stok ve teslimat seçenekleri için mağazamızdan bilgi alabilirsiniz.</p><a class="product-btn" href="/#urun/'+encodeURIComponent(p.id)+'">Fotoğrafları büyüterek incele →</a>'+(category?'<p><a href="'+category[0]+'">'+escapeHtml(category[1].breadcrumb)+' koleksiyonuna dön →</a></p>':'')+'</section>'+ (images.length?'<section class="catalog-photo-grid" aria-label="Ürün fotoğrafları">'+images.map((src,i)=>'<a class="catalog-photo-link" href="'+escapeHtml(src)+'" target="_blank" rel="noopener"><img src="'+escapeHtml(src)+'" alt="'+escapeHtml(name)+' — '+(i+2)+'. fotoğraf" loading="lazy" decoding="async" width="900" height="700"><span>Fotoğrafı büyüt ↗</span></a>').join('')+'</section>':'');
+  const values={HERO_MEDIA:'<a class="catalog-photo-link" href="'+escapeHtml(image)+'" target="_blank" rel="noopener" aria-label="'+escapeHtml(name)+' fotoğrafını büyüt"><img src="'+escapeHtml(image)+'" width="1200" height="900" fetchpriority="high" decoding="async" alt="'+escapeHtml(name)+'"><span>Fotoğrafı büyüt ↗</span></a>',PAGE_SCRIPT:'<script src="/catalog.js?v=20260907-polish2" defer></script>',TITLE:escapeHtml(name+' | Mobilyum Çorlu'),DESCRIPTION:escapeHtml(description),ROBOTS:'index, follow, max-image-preview:large',CANONICAL:escapeHtml(canonical),OG_IMAGE:escapeHtml('https://mobilyumcorlu.com'+image),HERO_IMAGE:escapeHtml(image),BREADCRUMB:escapeHtml(name),H1:escapeHtml(name),LEAD:escapeHtml(description),IMAGE_ALT:escapeHtml(name+' - Mobilyum Çorlu'),PAGE_CLASS:'seo-page-product',WHATSAPP_TEXT:encodeURIComponent('Merhaba Mobilyum, '+name+' hakkında bilgi almak istiyorum. '+canonical),BODY:body,JSON_LD:JSON.stringify(graph).replace(/</g,'\\u003c')};
+  res.set('Cache-Control','no-cache').send(SEO_PAGE_TEMPLATE.replace(/\{\{([A-Z0-9_]+)\}\}/g,(_,key)=>values[key]??''));
 }
 
 const adminAuthAttempts = new Map();
@@ -463,6 +505,7 @@ async function optimizeUploadedFiles(files) {
   }
 }
 
+app.get('/urun/:id', renderProductPage);
 app.get(Object.keys(SEO_PAGES), renderSeoPage);
 
 app.post("/api/analytics/event", (req, res) => {
@@ -619,6 +662,9 @@ app.get(["/admin", "/admin.html"], (_, res) => {
 app.get("/admin.css", sendPublicFile("admin.css", "no-store"));
 app.get("/admin.js", sendPublicFile("admin.js", "no-store"));
 
+app.use((req,res)=>{
+  res.status(404).set('X-Robots-Tag','noindex').type('html').send('<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sayfa bulunamadı | Mobilyum Çorlu</title><link rel="stylesheet" href="/style.css?v=20260907"><main class="seo-page-main"><h1>Bu sayfa bulunamadı.</h1><p>Ürün kaldırılmış veya bağlantı değişmiş olabilir.</p><a class="btn btn-dark" href="/">Ana sayfaya dön</a> <a class="btn btn-light" href="/yemek-odasi">Koleksiyonları incele</a></main></html>');
+});
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(400).json({ error: err.message || "Bir hata oluştu." });
