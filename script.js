@@ -217,6 +217,7 @@ function galleryHtml(p){
 function productCardHtml(p){
   return `<article class="product-card managed-product" data-product-id="${escapeHtml(p.id)}">
     ${galleryHtml(p)}
+    ${window.MobilyumFavorites?.buttonHtml(p,true)||''}
     <div class="product-info"><p>${escapeHtml(p.type||'Mobilya')}</p><h3><a href="/urun/${encodeURIComponent(p.id)}">${escapeHtml(p.name)}</a></h3>
     <span>${escapeHtml(p.price||'Fiyat için bilgi alın')}</span>
     ${p.description?`<small class="managed-desc">${escapeHtml(p.description)}</small>`:''}
@@ -284,6 +285,7 @@ function showProductDetail(product,{push=true}={}){
   detailPreviousHash=location.hash.startsWith('#kategori/')?location.hash:(productCategoryKey?`#kategori/${productCategoryKey}`:location.pathname+location.search);
   productDetail.querySelector('#product-detail-category').textContent=`MOBİLYUM · ${product.category||'KOLEKSİYON'}`;
   productDetail.querySelector('#product-detail-title').textContent=product.name||'Mobilyum ürünü';
+  productDetail.querySelector('[data-detail-favorite]').innerHTML=window.MobilyumFavorites?.buttonHtml(product)||'';
   productDetail.querySelector('.product-detail-description').textContent=product.description||defaultProductDescription(product.category);
   const badges=[product.type,product.tag].filter(Boolean);
   productDetail.querySelector('.product-detail-badges').innerHTML=badges.map(value=>`<span>${escapeHtml(value)}</span>`).join('');
@@ -360,7 +362,7 @@ document.addEventListener('click',e=>{
   const card=e.target.closest('.managed-product');
   const trigger=e.target.closest('.product-detail-open');
   if(!card&&!trigger)return;
-  if(e.target.closest('.managed-gallery-btn,.managed-gallery-dot,a'))return;
+  if(e.target.closest('.managed-gallery-btn,.managed-gallery-dot,[data-favorite-id],a'))return;
   const id=(trigger||card)?.dataset.productId||card?.dataset.productId;
   if(!id)return;
   e.preventDefault();
