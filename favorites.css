@@ -1,4 +1,6 @@
 .favorites-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:100px;font:500 14px/1.3 "DM Sans",sans-serif;white-space:nowrap;color:var(--ink);background:var(--paper)}
+/* The home header now has four visible desktop items, not three. */
+@media(min-width:801px){.nav{grid-template-columns:minmax(0,1fr) auto auto auto}.nav>.favorites-link,.nav>.nav-whatsapp{width:max-content;justify-self:end;white-space:nowrap}}
 [data-favorites-count]{min-width:22px;text-align:center;font:600 12px/22px "DM Sans",sans-serif;border-radius:50%;background:var(--cream);color:var(--ink)}
 .favorite-toggle{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;border:1px solid #b7a38d;border-radius:3px;background:#fbfaf7;color:#514235;font:600 14px/1.4 "DM Sans",sans-serif;cursor:pointer;touch-action:manipulation}
 .favorite-toggle[aria-pressed=true]{color:#724733;background:#f3e7da;border-color:#9a7054}.favorite-toggle[aria-pressed=true] svg{fill:currentColor}.favorite-toggle:disabled{opacity:.55;cursor:wait}.favorite-toggle[hidden]{display:none!important}
